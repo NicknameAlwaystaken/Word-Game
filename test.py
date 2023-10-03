@@ -18,10 +18,12 @@ GREEN_COLOR = (50, 200, 25)
 BLACK_COLOR = (0, 0, 0)
 WHITE_COLOR = (255, 255, 255)
 
+DEFAULT_BUTTON_FONT_SIZE = 50
+
 GUESS_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", 30)
 SOLUTION_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", 40)
 EVENT_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", 20)
-BUTTON_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", 50)
+BUTTON_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", DEFAULT_BUTTON_FONT_SIZE)
 GUESSES_LEFT_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", 20)
 
 screen = pygame.display.set_mode((INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT), pygame.RESIZABLE)
@@ -39,6 +41,13 @@ max_wrong_guesses = 5
 guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
 random.seed()
 
+def initialize_game():
+    global letter_buttons
+    letter_buttons = []
+    for letter in string.ascii_uppercase:
+        letter_buttons.append(Button(0, 0, letter))
+    fit_buttons()
+
 def get_new_word():
     list_of_answers = ["televisio"]
     #random_int = random.randrange(0, len(list_of_answers) - 1)
@@ -53,8 +62,13 @@ def reset_game():
     event_text = ""
     wrong_guess_amount = 0
     max_wrong_guesses = 5
-    setup_buttons()
+    reset_buttons()
     update_solution()
+
+def reset_buttons():
+    global letter_buttons
+    for button in letter_buttons:
+        button.change_color(BLACK_COLOR)
 
 def is_solved():
     if(solution_text == answer):
@@ -82,24 +96,28 @@ def check_letter(letter_guessed, button):
     guessed_letters.append(letter_guessed)
 
     if letter_guessed in answer.upper():
-        event_text = f"Correct!"
-        event_text_surface, event_text_rect = EVENT_FONT.render(event_text, GREEN_COLOR)
-        button.change_color(True)
+        display_event_text("Correct!", GREEN_COLOR)
+        button.change_color(GREEN_COLOR)
         
 
     elif letter_guessed not in answer.upper():
-        event_text = f"Character not in word"
-        event_text_surface, event_text_rect = EVENT_FONT.render(event_text, RED_COLOR)
+        display_event_text("Character not in word", RED_COLOR)
         wrong_guess_amount += 1
         guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
-        button.change_color(False)
+        button.change_color(RED_COLOR)
     
     update_solution()
     if(is_solved()):
+        display_event_text("You won!", GREEN_COLOR)
         reset_game()
     elif wrong_guess_amount == max_wrong_guesses:
         event_text = f"Too many wrong guesses!"
         reset_game()
+
+def display_event_text(text, color):
+    global event_text_rect, event_text_surface
+    event_text = text
+    event_text_surface, event_text_rect = EVENT_FONT.render(event_text, color)
 
 #button class
 class Button():
@@ -109,13 +127,15 @@ class Button():
         self.letter = letter
         self.clicked = False
         self.correct_letter = None
+        self.color = BLACK_COLOR
 
-    def change_color(self, correct_letter):
-        if correct_letter:
-            self.text_surface,_ = BUTTON_FONT.render(self.letter, GREEN_COLOR)
-        elif not correct_letter:
-            self.text_surface,_ = BUTTON_FONT.render(self.letter, RED_COLOR)
+    def change_color(self, color):
+        self.text_surface, new_location = BUTTON_FONT.render(self.letter, color)
+        self.color = color
+        if color == RED_COLOR: 
             self.text_surface.set_alpha(100)
+        else:
+            self.text_surface.set_alpha(255)
     
     def draw(self):
 
@@ -136,30 +156,68 @@ class Button():
                     
         screen.blit(self.text_surface, (self.rect.x, self.rect.y))
 
+    def change_location(self, x, y):
+        self.rect.topleft = (x,y)
+    
+    def reset_size(self):
+        self.text_surface,_ = BUTTON_FONT.render(self.letter, self.color)
 
-def setup_buttons():
+
+
+def fit_buttons():
     global letter_buttons, screen_size_x, screen_size_y
-    letter_buttons = []
     default_spacing = 70
     button_columns = int(screen_size_x / default_spacing)
     button_rows = int((screen_size_y / 2) / default_spacing)
-    print(f"columns: {button_columns} rows: {button_rows} space: {button_columns * button_rows} required: {len(string.ascii_uppercase)}")
-    while button_columns * button_rows <= len(string.ascii_uppercase):
-        button_columns += 1
-        
-    print(f"columns: {button_columns} rows: {button_rows} space: {button_columns * button_rows} required: {len(string.ascii_uppercase)}")
 
-    index_x = 1
-    index_y = 1
-    for letter in string.ascii_uppercase:
-        letter_buttons.append(Button(int(screen_size_x/button_columns) * index_x, ((int((screen_size_y/2)/button_rows * index_y) + int(screen_size_y/2)) - 50), letter))
+    is_extra_space = True
+    max_characters = len(string.ascii_uppercase)
+
+    while button_columns * (button_rows - 1) > max_characters:
+        button_columns -= 1
+        if(max_characters / button_columns >= 4):
+            break
+
+    while button_columns * button_rows < max_characters:
+        button_columns += 1
+        is_extra_space = False
+
+    index_x = 0
+    index_y = 0
+    row_padding = 0
+
+    if is_extra_space:
+        row_padding = (screen_size_x - (button_columns * (default_spacing + 1)) )
+
+    need_reset_size = False
+    print(f"BUTTON_FONT.size {BUTTON_FONT.size}")
+    if(row_padding >= 200):
+        BUTTON_FONT.size = DEFAULT_BUTTON_FONT_SIZE + int((row_padding - 200) / 10)
+        if(BUTTON_FONT.size > 65):
+            BUTTON_FONT.size = 65
+        need_reset_size = True
+        
+    print(f"BUTTON_FONT.size {BUTTON_FONT.size}")
+
+    button_layout_size_x = screen_size_x - row_padding
+    button_layout_size_y = screen_size_y / 2
+    print(f"button_columns {button_columns} default_spacing {default_spacing} row_padding {row_padding}")
+    for button in letter_buttons:
+        x_location = button_layout_size_x/button_columns * index_x + row_padding / 2
+        y_location = (button_layout_size_y/button_rows * index_y) + button_layout_size_y
+        button.change_location(int(x_location), int(y_location))
+        if need_reset_size:
+            button.reset_size()
         index_x += 1
         if index_x >= button_columns:
-            index_x = 1
+            index_x = 0
             index_y += 1
+    
+    print(f"columns: {button_columns} rows: {button_rows} space: {button_columns * button_rows} required: {max_characters}")
 
 running =  True
 
+initialize_game()
 reset_game()
 
 while running:
@@ -168,7 +226,7 @@ while running:
             running = False
         if event.type == pygame.VIDEORESIZE:
             screen_size_x, screen_size_y = screen.get_size()
-            setup_buttons()
+            fit_buttons()
 
     screen.fill((255,255,255))
     for button in letter_buttons:
