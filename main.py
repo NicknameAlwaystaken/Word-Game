@@ -11,6 +11,7 @@ import asyncio
 
 
 pygame.init()
+
 INIT_SCREEN_WIDTH = 800
 INIT_SCREEN_HEIGHT = 600
 
@@ -21,11 +22,24 @@ WHITE_COLOR = (255, 255, 255)
 
 DEFAULT_BUTTON_FONT_SIZE = 50
 
-GUESS_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", 30)
-SOLUTION_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", 40)
-EVENT_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", 20)
-BUTTON_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", DEFAULT_BUTTON_FONT_SIZE)
-GUESSES_LEFT_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", 20)
+#FONT_FILE_NAME = "arial"
+FONT_FILE_NAME = "YoungSerif-Regular.ttf"
+
+GUESS_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
+SOLUTION_FONT = pygame.font.Font(FONT_FILE_NAME, 40)
+EVENT_FONT = pygame.font.Font(FONT_FILE_NAME, 20)
+BUTTON_FONT = pygame.font.Font(FONT_FILE_NAME, DEFAULT_BUTTON_FONT_SIZE)
+GUESSES_LEFT_FONT = pygame.font.Font(FONT_FILE_NAME, 20)
+
+"""
+FONT_FILE_NAME = "YoungSerif-Regular.ttf"
+
+GUESS_FONT = pygame.freetype.Font(FONT_FILE_NAME, 30)
+SOLUTION_FONT = pygame.freetype.Font(FONT_FILE_NAME, 40)
+EVENT_FONT = pygame.freetype.Font(FONT_FILE_NAME, 20)
+BUTTON_FONT = pygame.freetype.Font(FONT_FILE_NAME, DEFAULT_BUTTON_FONT_SIZE)
+GUESSES_LEFT_FONT = pygame.freetype.Font(FONT_FILE_NAME, 20)
+"""
 
 screen = pygame.display.set_mode((INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT), pygame.DOUBLEBUF | pygame.RESIZABLE)
 screen_size_x, screen_size_y = screen.get_size()
@@ -36,7 +50,7 @@ guessed_letters = []
 letter_buttons = []
 solution_text = len(answer) * "_"
 event_text = ""
-event_text_surface, event_text_rect = EVENT_FONT.render(event_text, BLACK_COLOR)
+event_text_surface = EVENT_FONT.render(event_text, True, BLACK_COLOR)
 wrong_guess_amount = 0
 max_wrong_guesses = 5
 guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
@@ -86,14 +100,16 @@ def init_ui_text():
     global answer, guesses_left_text_surface, guesses_left_text_rect, solution_text_surface, solution_text_rect, guessed_text_surface, guessed_text_rect
     empty_string = ""
 
-    solution_text_surface, solution_text_rect = SOLUTION_FONT.render(solution_text, BLACK_COLOR)
+    solution_text_surface = SOLUTION_FONT.render(solution_text, True, BLACK_COLOR)
     
-    guessed_text_surface, guessed_text_rect = GUESS_FONT.render(empty_string.join(guessed_letters), BLACK_COLOR)
+    guessed_text_surface = GUESS_FONT.render(empty_string.join(guessed_letters), True, BLACK_COLOR)
+    guessed_text_rect = guessed_text_surface.get_rect()
     guessed_text_rect.x = ((screen_size_x - guessed_text_surface.get_rect()[2]) / 2)
     guessed_text_rect.y = (((screen_size_y / 2) - guessed_text_surface.get_rect()[3]) / 2)
 
     guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
-    guesses_left_text_surface, guesses_left_text_rect = GUESSES_LEFT_FONT.render(guesses_left_text, BLACK_COLOR)
+    guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, BLACK_COLOR)
+    guesses_left_text_rect = guesses_left_text_surface.get_rect()
     guesses_left_text_rect.x = 5
     guesses_left_text_rect.y = 10
 
@@ -118,7 +134,7 @@ def update_solution():
             solution += "_"
 
     solution_text = solution
-    solution_text_surface,_ = SOLUTION_FONT.render(solution_text, BLACK_COLOR)
+    solution_text_surface = SOLUTION_FONT.render(solution_text, True, BLACK_COLOR)
 
 def check_letter(letter_guessed, button):
     global wrong_guess_amount, event_text, answer, guesses_left_text, event_text_surface, event_text_rect, guesses_left_text_surface
@@ -136,7 +152,7 @@ def check_letter(letter_guessed, button):
         display_event_text("Character not in word", RED_COLOR)
         wrong_guess_amount += 1
         guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
-        guesses_left_text_surface,_ = GUESSES_LEFT_FONT.render(guesses_left_text, BLACK_COLOR)
+        guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, BLACK_COLOR)
         button.change_color(RED_COLOR)
     
     update_solution()
@@ -151,7 +167,7 @@ def check_letter(letter_guessed, button):
 def display_event_text(text, color):
     global event_text_rect, event_text_surface
     event_text = text
-    event_text_surface,_ = EVENT_FONT.render(event_text, color)
+    event_text_surface = EVENT_FONT.render(event_text, True, color)
     event_text_rect.x = ((screen_size_x - event_text_surface.get_rect()[2]) / 2)
     event_text_rect.y = (((screen_size_y / 2) - event_text_surface.get_rect()[3]) / 2) - 50
 
@@ -159,7 +175,8 @@ def display_event_text(text, color):
 class Button():
 
     def __init__(self, x, y, letter):
-        self.text_surface, self.rect = BUTTON_FONT.render(letter, BLACK_COLOR)
+        self.text_surface = BUTTON_FONT.render(letter, True, BLACK_COLOR)
+        self.rect = self.text_surface.get_rect()
         self.rect.topleft = (x,y)
         self.letter = letter
         self.is_clicked = False
@@ -167,7 +184,7 @@ class Button():
         self.color = BLACK_COLOR
 
     def change_color(self, color):
-        self.text_surface, new_location = BUTTON_FONT.render(self.letter, color)
+        self.text_surface = BUTTON_FONT.render(self.letter, True, color)
         self.color = color
         if color == RED_COLOR: 
             self.text_surface.set_alpha(100)
@@ -188,7 +205,7 @@ class Button():
         self.rect.topleft = (x,y)
     
     def reset_size(self):
-        self.text_surface,_ = BUTTON_FONT.render(self.letter, self.color)
+        self.text_surface = BUTTON_FONT.render(self.letter, True, self.color)
 
     def get_rect(self):
         return self.rect
@@ -220,14 +237,6 @@ def fit_buttons():
     if is_extra_space:
         row_padding = (screen_size_x - (button_columns * (default_spacing + 1)) )
 
-    BUTTON_FONT.size = DEFAULT_BUTTON_FONT_SIZE
-    if(row_padding >= 200):
-        BUTTON_FONT.size += int((row_padding - 200) / 10)
-        if(BUTTON_FONT.size > 65):
-            BUTTON_FONT.size = 65
-    elif row_padding <= 0:
-        BUTTON_FONT.size = 40
-
     button_layout_size_x = screen_size_x - row_padding
     button_layout_size_y = screen_size_y / 2
     print(f"button_columns {button_columns} BUTTON_FONT.size {BUTTON_FONT.size} row_padding {row_padding}")
@@ -248,12 +257,15 @@ def fit_buttons():
 def fit_ui_text():
     global solution_text_rect, solution_text_surface, event_text_rect, event_text_surface, guessed_text_rect, guessed_text_surface, guesses_left_text_rect, guesses_left_text_surface
 
+    solution_text_rect = solution_text_surface.get_rect()
     solution_text_rect.x = ((screen_size_x - solution_text_surface.get_rect()[2]) / 2)
     solution_text_rect.y = (((screen_size_y / 2) - solution_text_surface.get_rect()[3]) / 2) + 50
     
+    event_text_rect = event_text_surface.get_rect()
     event_text_rect.x = ((screen_size_x - event_text_surface.get_rect()[2]) / 2)
     event_text_rect.y = (((screen_size_y / 2) - event_text_surface.get_rect()[3]) / 2) - 50
     
+    guessed_text_rect = guessed_text_surface.get_rect()
     guessed_text_rect.x = ((screen_size_x - guessed_text_surface.get_rect()[2]) / 2)
     guessed_text_rect.y = (((screen_size_y / 2) - guessed_text_surface.get_rect()[3]) / 2)
     
