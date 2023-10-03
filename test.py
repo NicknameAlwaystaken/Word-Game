@@ -64,6 +64,7 @@ def reset_game():
     max_wrong_guesses = 5
     reset_buttons()
     update_solution()
+    fit_ui_text()
 
 def reset_buttons():
     global letter_buttons
@@ -77,7 +78,7 @@ def is_solved():
     return False
 
 def update_solution():
-    global solution_text
+    global solution_text, solution_text_surface, solution_text_rect
     solution = ""
     for letter in answer:
         if letter.upper() in guessed_letters:
@@ -86,6 +87,7 @@ def update_solution():
             solution += "_"
 
     solution_text = solution
+    solution_text_surface, solution_text_rect = SOLUTION_FONT.render(solution_text, BLACK_COLOR)
 
 def check_letter(letter_guessed, button):
     global wrong_guess_amount, event_text, answer, guesses_left_text, event_text_surface, event_text_rect
@@ -189,25 +191,24 @@ def fit_buttons():
     if is_extra_space:
         row_padding = (screen_size_x - (button_columns * (default_spacing + 1)) )
 
-    need_reset_size = False
-    print(f"BUTTON_FONT.size {BUTTON_FONT.size}")
+    BUTTON_FONT.size = DEFAULT_BUTTON_FONT_SIZE
     if(row_padding >= 200):
-        BUTTON_FONT.size = DEFAULT_BUTTON_FONT_SIZE + int((row_padding - 200) / 10)
+        BUTTON_FONT.size += int((row_padding - 200) / 10)
         if(BUTTON_FONT.size > 65):
             BUTTON_FONT.size = 65
-        need_reset_size = True
-        
-    print(f"BUTTON_FONT.size {BUTTON_FONT.size}")
+    elif row_padding <= 0:
+        BUTTON_FONT.size = 40
 
     button_layout_size_x = screen_size_x - row_padding
     button_layout_size_y = screen_size_y / 2
-    print(f"button_columns {button_columns} default_spacing {default_spacing} row_padding {row_padding}")
+    print(f"button_columns {button_columns} BUTTON_FONT.size {BUTTON_FONT.size} row_padding {row_padding}")
     for button in letter_buttons:
         x_location = button_layout_size_x/button_columns * index_x + row_padding / 2
         y_location = (button_layout_size_y/button_rows * index_y) + button_layout_size_y
+
         button.change_location(int(x_location), int(y_location))
-        if need_reset_size:
-            button.reset_size()
+        button.reset_size()
+
         index_x += 1
         if index_x >= button_columns:
             index_x = 0
@@ -215,10 +216,32 @@ def fit_buttons():
     
     print(f"columns: {button_columns} rows: {button_rows} space: {button_columns * button_rows} required: {max_characters}")
 
+def fit_ui_text():
+    global solution_text_rect, solution_text_surface, event_text_rect, event_text_surface, guessed_text_rect, guessed_text_surface, guesses_left_text_rect, guesses_left_text_surface
+
+    solution_text_rect.x = ((screen_size_x - solution_text_surface.get_rect()[2]) / 2)
+    solution_text_rect.y = (((screen_size_y / 2) - solution_text_surface.get_rect()[3]) / 2) + 50
+    
+    event_text_rect.x = ((screen_size_x - event_text_surface.get_rect()[2]) / 2)
+    event_text_rect.y = (((screen_size_y / 2) - event_text_surface.get_rect()[3]) / 2) - 50
+    
+    empty_string = ""
+    guessed_text_surface, guessed_text_rect = GUESS_FONT.render(empty_string.join(guessed_letters), BLACK_COLOR)
+    guessed_text_rect.x = ((screen_size_x - guessed_text_surface.get_rect()[2]) / 2)
+    guessed_text_rect.y = (((screen_size_y / 2) - guessed_text_surface.get_rect()[3]) / 2)
+    
+    guesses_left_text_surface, guesses_left_text_rect = GUESSES_LEFT_FONT.render(empty_string.join(guesses_left_text), BLACK_COLOR)
+    guesses_left_text_rect.x = 5
+    guesses_left_text_rect.y = 10
+
 running =  True
 
 initialize_game()
 reset_game()
+
+ui_text_list = [[solution_text_surface, solution_text_rect], [event_text_surface, event_text_rect],
+                [guessed_text_surface, guessed_text_rect], [guesses_left_text_surface, guesses_left_text_rect]
+                ]
 
 while running:
     for event in pygame.event.get():
@@ -227,30 +250,14 @@ while running:
         if event.type == pygame.VIDEORESIZE:
             screen_size_x, screen_size_y = screen.get_size()
             fit_buttons()
+            fit_ui_text()
 
     screen.fill((255,255,255))
     for button in letter_buttons:
         button.draw()
 
-    solution_text_surface, solution_text_rect = SOLUTION_FONT.render(solution_text, BLACK_COLOR)
-    solution_text_rect.x = ((screen_size_x - solution_text_surface.get_rect()[2]) / 2)
-    solution_text_rect.y = (((screen_size_y / 2) - solution_text_surface.get_rect()[3]) / 2) + 50
-    screen.blit(solution_text_surface, (solution_text_rect.x, solution_text_rect.y))
-
-    event_text_rect.x = ((screen_size_x - event_text_surface.get_rect()[2]) / 2)
-    event_text_rect.y = (((screen_size_y / 2) - event_text_surface.get_rect()[3]) / 2) - 50
-    screen.blit(event_text_surface, (event_text_rect.x, event_text_rect.y))
-
-    empty_string = ""
-    guessed_text_surface, guessed_text_rect = GUESS_FONT.render(empty_string.join(guessed_letters), BLACK_COLOR)
-    guessed_text_rect.x = ((screen_size_x - guessed_text_surface.get_rect()[2]) / 2)
-    guessed_text_rect.y = (((screen_size_y / 2) - guessed_text_surface.get_rect()[3]) / 2)
-    screen.blit(guessed_text_surface, (guessed_text_rect.x, guessed_text_rect.y))
-    
-    guesses_left_text_surface, guesses_left_text_rect = GUESSES_LEFT_FONT.render(empty_string.join(guesses_left_text), BLACK_COLOR)
-    guesses_left_text_rect.x = 5
-    guesses_left_text_rect.y = 10
-    screen.blit(guesses_left_text_surface, (guesses_left_text_rect.x, guesses_left_text_rect.y))
+    for i in range(len(ui_text_list)):
+        screen.blit(ui_text_list[i][0], ui_text_list[i][1])
 
     pygame.display.flip()
 
