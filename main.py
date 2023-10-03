@@ -7,6 +7,7 @@ import pygame
 import pygame.freetype  # Import the freetype module.
 import string
 import random
+import asyncio
 
 
 pygame.init()
@@ -26,7 +27,7 @@ EVENT_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", 20)
 BUTTON_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", DEFAULT_BUTTON_FONT_SIZE)
 GUESSES_LEFT_FONT = pygame.freetype.Font("YoungSerif-Regular.ttf", 20)
 
-screen = pygame.display.set_mode((INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT), pygame.RESIZABLE)
+screen = pygame.display.set_mode((INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT), pygame.DOUBLEBUF | pygame.RESIZABLE)
 screen_size_x, screen_size_y = screen.get_size()
 
 
@@ -39,6 +40,8 @@ event_text_surface, event_text_rect = EVENT_FONT.render(event_text, BLACK_COLOR)
 wrong_guess_amount = 0
 max_wrong_guesses = 5
 guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
+
+clock = pygame.time.Clock()
 
 def initialize_game():
     global letter_buttons
@@ -128,7 +131,6 @@ def check_letter(letter_guessed, button):
     if letter_guessed in answer.upper():
         display_event_text("Correct!", GREEN_COLOR)
         button.change_color(GREEN_COLOR)
-        
 
     elif letter_guessed not in answer.upper():
         display_event_text("Character not in word", RED_COLOR)
@@ -155,11 +157,12 @@ def display_event_text(text, color):
 
 #button class
 class Button():
+
     def __init__(self, x, y, letter):
         self.text_surface, self.rect = BUTTON_FONT.render(letter, BLACK_COLOR)
         self.rect.topleft = (x,y)
         self.letter = letter
-        self.clicked = False
+        self.is_clicked = False
         self.correct_letter = None
         self.color = BLACK_COLOR
 
@@ -172,29 +175,23 @@ class Button():
             self.text_surface.set_alpha(255)
     
     def draw(self):
-
-        #get mouse position
-        pos = pygame.mouse.get_pos()
-
-        if event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 1:
-                self.clicked = False
-
-        #check mouseover and clicked conditions
-        if self.rect.collidepoint(pos):
-            #print(f'Hovering on {self.letter}')
-            if event.type == pygame.MOUSEBUTTONDOWN and not self.clicked:
-                if event.button == 1:
-                    self.clicked = True
-                    check_letter(self.letter, self)
-                    
         screen.blit(self.text_surface, (self.rect.x, self.rect.y))
+    
+    def clicked(self):
+        self.is_clicked = True
+        check_letter(self.letter, self)
+    
+    def not_clicked(self):
+        self.is_clicked = False
 
     def change_location(self, x, y):
         self.rect.topleft = (x,y)
     
     def reset_size(self):
         self.text_surface,_ = BUTTON_FONT.render(self.letter, self.color)
+
+    def get_rect(self):
+        return self.rect
 
 
 
@@ -263,38 +260,56 @@ def fit_ui_text():
     guesses_left_text_rect.x = 5
     guesses_left_text_rect.y = 10
 
-running =  True
 
-initialize_game()
-reset_game()
+async def main():
 
-ui_text_list = [[solution_text_surface, solution_text_rect], [event_text_surface, event_text_rect],
-                [guessed_text_surface, guessed_text_rect], [guesses_left_text_surface, guesses_left_text_rect]
-                ]
+    global screen_size_x, screen_size_y
 
+    initialize_game()
+    reset_game()
 
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.VIDEORESIZE:
-            screen_size_x, screen_size_y = screen.get_size()
-            fit_buttons()
-            fit_ui_text()
+    #ui_text_list = [[solution_text_surface, solution_text_rect], [event_text_surface, event_text_rect],
+                    #[guessed_text_surface, guessed_text_rect], [guesses_left_text_surface, guesses_left_text_rect]
+                    #]
 
-    screen.fill((255,255,255))
-    for button in letter_buttons:
-        button.draw()
+    running =  True
 
-    #for i in range(len(ui_text_list)):
-        #screen.blit(ui_text_list[i][0], (ui_text_list[i][1].x, ui_text_list[i][1].y))
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-    screen.blit(solution_text_surface, solution_text_rect)
-    screen.blit(event_text_surface, event_text_rect)
-    screen.blit(guessed_text_surface, guessed_text_rect)
-    screen.blit(guesses_left_text_surface, guesses_left_text_rect)
-    
+            if event.type == pygame.VIDEORESIZE:
+                screen_size_x, screen_size_y = screen.get_size()
+                fit_buttons()
+                fit_ui_text()
 
-    pygame.display.flip()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
 
-pygame.quit()
+                for button in letter_buttons:
+                    button_rect = button.get_rect()
+                    if button_rect.collidepoint(mouse_pos):
+                        button.clicked()
+                    else:
+                        button.not_clicked()
+
+        screen.fill((255,255,255))
+        for button in letter_buttons:
+            button.draw()
+
+        #for i in range(len(ui_text_list)):
+            #screen.blit(ui_text_list[i][0], (ui_text_list[i][1].x, ui_text_list[i][1].y))
+
+        screen.blit(solution_text_surface, solution_text_rect)
+        screen.blit(event_text_surface, event_text_rect)
+        screen.blit(guessed_text_surface, guessed_text_rect)
+        screen.blit(guesses_left_text_surface, guesses_left_text_rect)
+        
+        pygame.display.flip()
+        clock.tick(60)
+        await asyncio.sleep(0)
+
+    pygame.quit()
+
+asyncio.run(main())
