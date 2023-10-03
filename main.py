@@ -4,7 +4,6 @@
 # Import and initialize the pygame library
 
 import pygame
-import pygame.freetype  # Import the freetype module.
 import string
 import random
 import asyncio
@@ -30,16 +29,6 @@ SOLUTION_FONT = pygame.font.Font(FONT_FILE_NAME, 40)
 EVENT_FONT = pygame.font.Font(FONT_FILE_NAME, 20)
 BUTTON_FONT = pygame.font.Font(FONT_FILE_NAME, DEFAULT_BUTTON_FONT_SIZE)
 GUESSES_LEFT_FONT = pygame.font.Font(FONT_FILE_NAME, 20)
-
-"""
-FONT_FILE_NAME = "YoungSerif-Regular.ttf"
-
-GUESS_FONT = pygame.freetype.Font(FONT_FILE_NAME, 30)
-SOLUTION_FONT = pygame.freetype.Font(FONT_FILE_NAME, 40)
-EVENT_FONT = pygame.freetype.Font(FONT_FILE_NAME, 20)
-BUTTON_FONT = pygame.freetype.Font(FONT_FILE_NAME, DEFAULT_BUTTON_FONT_SIZE)
-GUESSES_LEFT_FONT = pygame.freetype.Font(FONT_FILE_NAME, 20)
-"""
 
 screen = pygame.display.set_mode((INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT), pygame.DOUBLEBUF | pygame.RESIZABLE)
 screen_size_x, screen_size_y = screen.get_size()
