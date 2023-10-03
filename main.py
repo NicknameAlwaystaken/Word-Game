@@ -83,7 +83,6 @@ def init_ui_text():
     global answer, guesses_left_text_surface, guesses_left_text_rect, solution_text_surface, solution_text_rect, guessed_text_surface, guessed_text_rect
     empty_string = ""
 
-    solution_text = len(answer) * "_"
     solution_text_surface, solution_text_rect = SOLUTION_FONT.render(solution_text, BLACK_COLOR)
     
     guessed_text_surface, guessed_text_rect = GUESS_FONT.render(empty_string.join(guessed_letters), BLACK_COLOR)
@@ -110,7 +109,7 @@ def update_solution():
     global solution_text, solution_text_surface
     solution = ""
     for letter in answer:
-        if letter.upper() in guessed_letters:
+        if letter.upper() in guessed_letters or letter in string.punctuation:
             solution += letter
         else:
             solution += "_"
@@ -273,6 +272,7 @@ ui_text_list = [[solution_text_surface, solution_text_rect], [event_text_surface
                 [guessed_text_surface, guessed_text_rect], [guesses_left_text_surface, guesses_left_text_rect]
                 ]
 
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -287,7 +287,7 @@ while running:
         button.draw()
 
     #for i in range(len(ui_text_list)):
-        #screen.blit(ui_text_list[i][0], ui_text_list[i][1])
+        #screen.blit(ui_text_list[i][0], (ui_text_list[i][1].x, ui_text_list[i][1].y))
 
     screen.blit(solution_text_surface, solution_text_rect)
     screen.blit(event_text_surface, event_text_rect)
