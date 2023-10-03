@@ -21,7 +21,6 @@ WHITE_COLOR = (255, 255, 255)
 
 DEFAULT_BUTTON_FONT_SIZE = 50
 
-#FONT_FILE_NAME = "arial"
 FONT_FILE_NAME = "YoungSerif-Regular.ttf"
 
 GUESS_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
