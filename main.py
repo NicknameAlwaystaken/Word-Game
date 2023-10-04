@@ -630,7 +630,7 @@ async def main():
                         mouse_left_click_event(object_list_index)
 
                 #Touch screen finger events
-                elif(event.type == pygame.FINGERDOWN):
+                if(event.type == pygame.FINGERDOWN):
                     finger_tap_event(event, object_list_index)
 
             elif(game.state == STATE_PLAYING): # playing state
@@ -659,7 +659,7 @@ async def main():
                                 button.not_clicked()
                             
                 #Touch screen finger events
-                elif(event.type == pygame.FINGERDOWN):
+                if(event.type == pygame.FINGERDOWN):
                     fingers = get_fingers(event)
                     for finger, finger_pos in fingers.items():
                         if button_rect.collidepoint(finger_pos):
