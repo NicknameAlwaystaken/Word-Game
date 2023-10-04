@@ -241,6 +241,8 @@ def check_letter(letter_guessed, button):
         game_won()
     elif wrong_guess_amount == max_wrong_guesses:
         display_event_text("Too many wrong guesses!", BLACK_COLOR)
+        guesses_left_text = f""
+        guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, BLACK_COLOR)
         game.set_state(STATE_SHOW_SOLUTION)
         solve_word()
 
@@ -343,8 +345,8 @@ def fit_ui_text():
     start_game_text_rect.y = ((screen_size_y - start_game_text_surface.get_rect()[3]) / 2)
     
     continue_text_rect = continue_text_surface.get_rect()
-    continue_text_rect.x = (screen_size_x - continue_text_surface.get_rect()[2]) - 5
-    continue_text_rect.y = 5
+    continue_text_rect.x = 5
+    continue_text_rect.y = 10
 
     solution_text_rect = solution_text_surface.get_rect()
     solution_text_rect.x = ((screen_size_x - solution_text_surface.get_rect()[2]) / 2)
