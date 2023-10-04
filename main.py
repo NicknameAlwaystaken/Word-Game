@@ -16,6 +16,7 @@ INIT_SCREEN_HEIGHT = 600
 
 RED_COLOR = (200, 50, 25)
 GREEN_COLOR = (50, 200, 25)
+DARK_BLUE_COLOR = (50, 50, 150)
 BLACK_COLOR = (0, 0, 0)
 WHITE_COLOR = (255, 255, 255)
 
@@ -28,6 +29,7 @@ SOLUTION_FONT = pygame.font.Font(FONT_FILE_NAME, 40)
 EVENT_FONT = pygame.font.Font(FONT_FILE_NAME, 20)
 BUTTON_FONT = pygame.font.Font(FONT_FILE_NAME, DEFAULT_BUTTON_FONT_SIZE)
 GUESSES_LEFT_FONT = pygame.font.Font(FONT_FILE_NAME, 20)
+START_GAME_FONT = pygame.font.Font(FONT_FILE_NAME, 70)
 
 screen = pygame.display.set_mode((INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT), pygame.DOUBLEBUF | pygame.RESIZABLE)
 screen_size_x, screen_size_y = screen.get_size()
@@ -42,17 +44,45 @@ event_text_surface = EVENT_FONT.render(event_text, True, BLACK_COLOR)
 wrong_guess_amount = 0
 max_wrong_guesses = 5
 guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
+start_game_text = f"Start hangman!"
+start_game_text_surface = START_GAME_FONT.render(start_game_text, True, DARK_BLUE_COLOR)
 
 clock = pygame.time.Clock()
+
+STATE_MENU = "MENU"
+STATE_RUNNING = "RUNNING"
+STATE_POST_GAME = "POST_GAME"
+
+class Game:
+    def __init__(self) -> None:
+        self.state = STATE_MENU
+    
+    def set_state(self, state):
+        self.state = state
+    
+    def update(self):
+        if self.state == STATE_RUNNING:
+            for button in letter_buttons:
+                button.draw()
+
+            screen.blit(solution_text_surface, solution_text_rect)
+            screen.blit(event_text_surface, event_text_rect)
+            screen.blit(guessed_text_surface, guessed_text_rect)
+            screen.blit(guesses_left_text_surface, guesses_left_text_rect)
+        if self.state == STATE_MENU:
+            screen.blit(start_game_text_surface, start_game_text_rect)
+
+
+game = Game()
 
 def initialize_game():
     global letter_buttons
     random.seed()
     letter_buttons = []
     for letter in string.ascii_uppercase:
-        letter_buttons.append(Button(0, 0, letter))
+        letter_buttons.append(Letter_Button(0, 0, letter))
     read_wordlist()
-    fit_buttons()
+    fit_letter_buttons()
 
 def read_wordlist():
     global list_of_answers
@@ -85,8 +115,12 @@ def reset_game():
     fit_ui_text()
 
 def init_ui_text():
-    global answer, guesses_left_text_surface, guesses_left_text_rect, solution_text_surface, solution_text_rect, guessed_text_surface, guessed_text_rect
+    global answer, guesses_left_text_surface, guesses_left_text_rect, solution_text_surface, solution_text_rect, guessed_text_surface, guessed_text_rect, start_game_text_rect, start_game_text_surface
     empty_string = ""
+    
+    start_game_text_rect = start_game_text_surface.get_rect()
+    start_game_text_rect.x = ((screen_size_x - start_game_text_surface.get_rect()[2]) / 2)
+    start_game_text_rect.y = ((screen_size_y - start_game_text_surface.get_rect()[3]) / 2)
 
     solution_text_surface = SOLUTION_FONT.render(solution_text, True, BLACK_COLOR)
     
@@ -100,6 +134,8 @@ def init_ui_text():
     guesses_left_text_rect = guesses_left_text_surface.get_rect()
     guesses_left_text_rect.x = 5
     guesses_left_text_rect.y = 10
+
+    
 
 def reset_buttons():
     global letter_buttons
@@ -159,8 +195,7 @@ def display_event_text(text, color):
     event_text_rect.x = ((screen_size_x - event_text_surface.get_rect()[2]) / 2)
     event_text_rect.y = (((screen_size_y / 2) - event_text_surface.get_rect()[3]) / 2) - 50
 
-#button class
-class Button():
+class Letter_Button():
 
     def __init__(self, x, y, letter):
         self.text_surface = BUTTON_FONT.render(letter, True, BLACK_COLOR)
@@ -200,7 +235,7 @@ class Button():
 
 
 
-def fit_buttons():
+def fit_letter_buttons():
     global letter_buttons, screen_size_x, screen_size_y
     default_spacing = 70
     button_columns = int(screen_size_x / default_spacing)
@@ -243,7 +278,11 @@ def fit_buttons():
     print(f"columns: {button_columns} rows: {button_rows} space: {button_columns * button_rows} required: {max_characters}")
 
 def fit_ui_text():
-    global solution_text_rect, solution_text_surface, event_text_rect, event_text_surface, guessed_text_rect, guessed_text_surface, guesses_left_text_rect, guesses_left_text_surface
+    global solution_text_rect, solution_text_surface, event_text_rect, event_text_surface, guessed_text_rect, guessed_text_surface, guesses_left_text_rect, guesses_left_text_surface, start_game_text_surface, start_game_text_rect
+
+    start_game_text_rect = start_game_text_surface.get_rect()
+    start_game_text_rect.x = ((screen_size_x - start_game_text_surface.get_rect()[2]) / 2)
+    start_game_text_rect.y = ((screen_size_y - start_game_text_surface.get_rect()[3]) / 2)
 
     solution_text_rect = solution_text_surface.get_rect()
     solution_text_rect.x = ((screen_size_x - solution_text_surface.get_rect()[2]) / 2)
@@ -263,7 +302,7 @@ def fit_ui_text():
 
 async def main():
 
-    global screen_size_x, screen_size_y
+    global screen_size_x, screen_size_y, start_game_text_rect
 
     initialize_game()
     reset_game()
@@ -281,31 +320,54 @@ async def main():
 
             if event.type == pygame.VIDEORESIZE:
                 screen_size_x, screen_size_y = screen.get_size()
-                fit_buttons()
+                fit_letter_buttons()
                 fit_ui_text()
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            #Mouse events
+            if(event.type == pygame.MOUSEBUTTONDOWN):
                 mouse_pos = pygame.mouse.get_pos()
 
-                for button in letter_buttons:
-                    button_rect = button.get_rect()
-                    if button_rect.collidepoint(mouse_pos):
-                        button.clicked()
-                    else:
-                        button.not_clicked()
+                if(game.state == STATE_RUNNING):
+                    for button in letter_buttons:
+                        button_rect = button.get_rect()
+                        if button_rect.collidepoint(mouse_pos):
+                            button.clicked()
+                        else:
+                            button.not_clicked()
+                elif(game.state == STATE_MENU):
+                    if start_game_text_rect.collidepoint(mouse_pos):
+                        game.set_state(STATE_RUNNING)
+            
+            #Touch screen finger events
+            elif(event.type == pygame.FINGERDOWN):
+                fingers = {}
+                x = event.x * screen.get_height()
+                y = event.y * screen.get_width()
+                fingers[event.finger_id] = x, y
+
+                if(game.state == STATE_RUNNING):
+                    for finger, finger_pos in fingers.items():
+                        if button_rect.collidepoint(finger_pos):
+                            button.clicked()
+                        else:
+                            button.not_clicked()
+                elif(game.state == STATE_MENU):
+                    for finger, finger_pos in fingers.items():
+                        if start_game_text_rect.collidepoint(finger_pos):
+                            game.set_state(STATE_RUNNING)
+
 
         screen.fill((255,255,255))
+        game.update()
+        """
         for button in letter_buttons:
             button.draw()
-
-        #for i in range(len(ui_text_list)):
-            #screen.blit(ui_text_list[i][0], (ui_text_list[i][1].x, ui_text_list[i][1].y))
 
         screen.blit(solution_text_surface, solution_text_rect)
         screen.blit(event_text_surface, event_text_rect)
         screen.blit(guessed_text_surface, guessed_text_rect)
         screen.blit(guesses_left_text_surface, guesses_left_text_rect)
-        
+        """
         pygame.display.flip()
         clock.tick(60)
         await asyncio.sleep(0)
