@@ -21,6 +21,7 @@ BLACK_COLOR = (0, 0, 0)
 WHITE_COLOR = (255, 255, 255)
 
 SOLVED_COLOR = GREEN_COLOR
+UNSOLVED_COLOR = RED_COLOR
 
 DEFAULT_BUTTON_FONT_SIZE = 50
 
@@ -171,11 +172,16 @@ def is_solved():
         return True
     return False
 
+def game_won():
+    global solution_text, solution_text_surface
+
+    solution_text_surface = SOLUTION_FONT.render(solution_text, True, SOLVED_COLOR)
+
 def solve_word():
     global solution_text, solution_text_surface, answer
 
     solution_text = answer
-    solution_text_surface = SOLUTION_FONT.render(solution_text, True, SOLVED_COLOR)
+    solution_text_surface = SOLUTION_FONT.render(solution_text, True, UNSOLVED_COLOR)
 
 def update_solution():
     global solution_text, solution_text_surface
@@ -202,7 +208,7 @@ def check_letter(letter_guessed, button):
         button.change_color(GREEN_COLOR)
 
     elif letter_guessed not in answer.upper():
-        display_event_text("Character not in word", RED_COLOR)
+        display_event_text(f"Character '{letter_guessed}' not in word", RED_COLOR)
         wrong_guess_amount += 1
         guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
         guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, BLACK_COLOR)
@@ -211,10 +217,11 @@ def check_letter(letter_guessed, button):
     update_solution()
 
     if(is_solved()):
-        display_event_text("You won!", GREEN_COLOR)
+        display_event_text("You won!", BLACK_COLOR)
         game.set_state(STATE_GAME_WON)
+        game_won()
     elif wrong_guess_amount == max_wrong_guesses:
-        display_event_text("Too many wrong guesses!", RED_COLOR)
+        display_event_text("Too many wrong guesses!", BLACK_COLOR)
         game.set_state(STATE_SHOW_SOLUTION)
         solve_word()
 
