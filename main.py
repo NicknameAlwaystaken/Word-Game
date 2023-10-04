@@ -189,12 +189,18 @@ def is_solved():
     return False
 
 def game_won():
-    global solution_text, solution_text_surface
+    global solution_text, solution_text_surface, guesses_left_text, guesses_left_text_surface
+
+    guesses_left_text = f""
+    guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, BLACK_COLOR)
 
     solution_text_surface = SOLUTION_FONT.render(solution_text, True, SOLVED_COLOR)
 
 def solve_word():
-    global solution_text, solution_text_surface, answer
+    global solution_text, solution_text_surface, answer, guesses_left_text, guesses_left_text_surface
+
+    guesses_left_text = f""
+    guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, BLACK_COLOR)
 
     solution_text = answer
     solution_text_surface = SOLUTION_FONT.render(solution_text, True, UNSOLVED_COLOR)
@@ -226,11 +232,13 @@ def check_letter(letter_guessed, button):
     elif letter_guessed not in answer.upper():
         display_event_text(f"Character '{letter_guessed}' not in word", RED_COLOR)
         wrong_guess_amount += 1
+
         guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
+        
         increment = int((COLOR_MAX_VALUE - INITIAL_DANGER_COLOR[0]) / max_wrong_guesses)
         new_color = ((INITIAL_DANGER_COLOR[0] + increment * wrong_guess_amount), INITIAL_DANGER_COLOR[1], INITIAL_DANGER_COLOR[2])
-        print(new_color)
         guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, new_color)
+
         button.change_color(RED_COLOR)
     
     update_solution()
@@ -241,8 +249,6 @@ def check_letter(letter_guessed, button):
         game_won()
     elif wrong_guess_amount == max_wrong_guesses:
         display_event_text("Too many wrong guesses!", BLACK_COLOR)
-        guesses_left_text = f""
-        guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, BLACK_COLOR)
         game.set_state(STATE_SHOW_SOLUTION)
         solve_word()
 
@@ -396,9 +402,10 @@ async def main():
 
                 #Mouse events
                 if(event.type == pygame.MOUSEBUTTONDOWN):
-                    mouse_pos = pygame.mouse.get_pos()
-                    if start_game_text_rect.collidepoint(mouse_pos):
-                        game.set_state(STATE_PLAYING)
+                    if event.button == 1: # 1 = left click
+                        mouse_pos = pygame.mouse.get_pos()
+                        if start_game_text_rect.collidepoint(mouse_pos):
+                            game.set_state(STATE_PLAYING)
 
                 #Touch screen finger events
                 elif(event.type == pygame.FINGERDOWN):
@@ -417,13 +424,14 @@ async def main():
                             button.not_clicked()
                 #Mouse events
                 if(event.type == pygame.MOUSEBUTTONDOWN):
-                    mouse_pos = pygame.mouse.get_pos()
-                    for button in letter_buttons:
-                        button_rect = button.get_rect()
-                        if button_rect.collidepoint(mouse_pos):
-                            button.clicked()
-                        else:
-                            button.not_clicked()
+                    if event.button == 1: # 1 = left click
+                        mouse_pos = pygame.mouse.get_pos()
+                        for button in letter_buttons:
+                            button_rect = button.get_rect()
+                            if button_rect.collidepoint(mouse_pos):
+                                button.clicked()
+                            else:
+                                button.not_clicked()
                             
                 #Touch screen finger events
                 elif(event.type == pygame.FINGERDOWN):
@@ -442,9 +450,10 @@ async def main():
 
                 #Mouse events
                 if(event.type == pygame.MOUSEBUTTONDOWN):
-                    mouse_pos = pygame.mouse.get_pos()
-                    if continue_text_rect.collidepoint(mouse_pos):
-                        new_round()
+                    if event.button == 1: # 1 = left click
+                        mouse_pos = pygame.mouse.get_pos()
+                        if continue_text_rect.collidepoint(mouse_pos):
+                            new_round()
 
                 #Touch screen finger events
                 elif(event.type == pygame.FINGERDOWN):
