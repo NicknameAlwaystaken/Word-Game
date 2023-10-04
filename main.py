@@ -20,6 +20,8 @@ DARK_BLUE_COLOR = (50, 50, 150)
 BLACK_COLOR = (0, 0, 0)
 WHITE_COLOR = (255, 255, 255)
 
+SOLVED_COLOR = GREEN_COLOR
+
 DEFAULT_BUTTON_FONT_SIZE = 50
 
 FONT_FILE_NAME = "YoungSerif-Regular.ttf"
@@ -30,6 +32,7 @@ EVENT_FONT = pygame.font.Font(FONT_FILE_NAME, 20)
 BUTTON_FONT = pygame.font.Font(FONT_FILE_NAME, DEFAULT_BUTTON_FONT_SIZE)
 GUESSES_LEFT_FONT = pygame.font.Font(FONT_FILE_NAME, 20)
 START_GAME_FONT = pygame.font.Font(FONT_FILE_NAME, 70)
+CONTINUE_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
 
 screen = pygame.display.set_mode((INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT), pygame.DOUBLEBUF | pygame.RESIZABLE)
 screen_size_x, screen_size_y = screen.get_size()
@@ -43,15 +46,21 @@ event_text = ""
 event_text_surface = EVENT_FONT.render(event_text, True, BLACK_COLOR)
 wrong_guess_amount = 0
 max_wrong_guesses = 5
+
 guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
+
 start_game_text = f"Start hangman!"
 start_game_text_surface = START_GAME_FONT.render(start_game_text, True, DARK_BLUE_COLOR)
+
+continue_text = f"Click here to continue!"
+continue_text_surface = CONTINUE_FONT.render(continue_text, True, DARK_BLUE_COLOR)
 
 clock = pygame.time.Clock()
 
 STATE_MENU = "MENU"
 STATE_RUNNING = "RUNNING"
-STATE_POST_GAME = "POST_GAME"
+STATE_SHOW_SOLUTION = "SHOW_SOLUTION"
+STATE_GAME_WON = "GAME_WON"
 
 class Game:
     def __init__(self) -> None:
@@ -61,7 +70,7 @@ class Game:
         self.state = state
     
     def update(self):
-        if self.state == STATE_RUNNING:
+        if self.state == STATE_RUNNING or self.state == STATE_SHOW_SOLUTION or self.state == STATE_GAME_WON:
             for button in letter_buttons:
                 button.draw()
 
@@ -69,6 +78,8 @@ class Game:
             screen.blit(event_text_surface, event_text_rect)
             screen.blit(guessed_text_surface, guessed_text_rect)
             screen.blit(guesses_left_text_surface, guesses_left_text_rect)
+            if self.state == STATE_SHOW_SOLUTION or self.state == STATE_GAME_WON:
+                screen.blit(continue_text_surface, continue_text_rect)
         if self.state == STATE_MENU:
             screen.blit(start_game_text_surface, start_game_text_rect)
 
@@ -97,6 +108,10 @@ def get_new_word():
     random_int = random.randrange(0, len(list_of_answers))
     return list_of_answers[random_int]
 
+def new_round():
+    reset_game()
+    game.set_state(STATE_RUNNING)
+
 def reset_game():
     global answer, guessed_letters, solution_text, event_text, wrong_guess_amount
     global max_wrong_guesses, letter_buttons
@@ -104,8 +119,6 @@ def reset_game():
     answer = get_new_word()
     guessed_letters = []
 
-
-    event_text = ""
     wrong_guess_amount = 0
     max_wrong_guesses = 8
 
@@ -115,7 +128,10 @@ def reset_game():
     fit_ui_text()
 
 def init_ui_text():
-    global answer, guesses_left_text_surface, guesses_left_text_rect, solution_text_surface, solution_text_rect, guessed_text_surface, guessed_text_rect, start_game_text_rect, start_game_text_surface
+    global answer, guesses_left_text_surface, guesses_left_text_rect, solution_text_surface, solution_text_rect
+    global guessed_text_surface, guessed_text_rect, start_game_text_rect, start_game_text_surface, continue_text_surface, continue_text_rect
+    global event_text_surface, event_text
+
     empty_string = ""
     
     start_game_text_rect = start_game_text_surface.get_rect()
@@ -123,6 +139,13 @@ def init_ui_text():
     start_game_text_rect.y = ((screen_size_y - start_game_text_surface.get_rect()[3]) / 2)
 
     solution_text_surface = SOLUTION_FONT.render(solution_text, True, BLACK_COLOR)
+    
+    event_text = ""
+    event_text_surface = EVENT_FONT.render(event_text, True, BLACK_COLOR)
+
+    continue_text_rect = continue_text_surface.get_rect()
+    continue_text_rect.x = (screen_size_x - continue_text_surface.get_rect()[2]) - 5
+    continue_text_rect.y = 5
     
     guessed_text_surface = GUESS_FONT.render(empty_string.join(guessed_letters), True, BLACK_COLOR)
     guessed_text_rect = guessed_text_surface.get_rect()
@@ -147,6 +170,12 @@ def is_solved():
         print("You got it. Well done!")
         return True
     return False
+
+def solve_word():
+    global solution_text, solution_text_surface, answer
+
+    solution_text = answer
+    solution_text_surface = SOLUTION_FONT.render(solution_text, True, SOLVED_COLOR)
 
 def update_solution():
     global solution_text, solution_text_surface
@@ -183,10 +212,11 @@ def check_letter(letter_guessed, button):
 
     if(is_solved()):
         display_event_text("You won!", GREEN_COLOR)
-        reset_game()
+        game.set_state(STATE_GAME_WON)
     elif wrong_guess_amount == max_wrong_guesses:
         display_event_text("Too many wrong guesses!", RED_COLOR)
-        reset_game()
+        game.set_state(STATE_SHOW_SOLUTION)
+        solve_word()
 
 def display_event_text(text, color):
     global event_text_rect, event_text_surface
@@ -300,6 +330,7 @@ def fit_ui_text():
     guesses_left_text_rect.y = 10
 
 
+
 async def main():
 
     global screen_size_x, screen_size_y, start_game_text_rect
@@ -337,6 +368,9 @@ async def main():
                 elif(game.state == STATE_MENU):
                     if start_game_text_rect.collidepoint(mouse_pos):
                         game.set_state(STATE_RUNNING)
+                elif(game.state == STATE_SHOW_SOLUTION or game.state == STATE_GAME_WON):
+                    if continue_text_rect.collidepoint(mouse_pos):
+                        new_round()
             
             #Touch screen finger events
             elif(event.type == pygame.FINGERDOWN):
@@ -355,19 +389,15 @@ async def main():
                     for finger, finger_pos in fingers.items():
                         if start_game_text_rect.collidepoint(finger_pos):
                             game.set_state(STATE_RUNNING)
+                elif(game.state == STATE_SHOW_SOLUTION or game.state == STATE_GAME_WON):
+                    for finger, finger_pos in fingers.items():
+                        if continue_text_rect.collidepoint(finger_pos):
+                            new_round()
 
 
         screen.fill((255,255,255))
         game.update()
-        """
-        for button in letter_buttons:
-            button.draw()
-
-        screen.blit(solution_text_surface, solution_text_rect)
-        screen.blit(event_text_surface, event_text_rect)
-        screen.blit(guessed_text_surface, guessed_text_rect)
-        screen.blit(guesses_left_text_surface, guesses_left_text_rect)
-        """
+        
         pygame.display.flip()
         clock.tick(60)
         await asyncio.sleep(0)
