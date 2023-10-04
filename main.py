@@ -617,6 +617,7 @@ async def main():
                 fit_ui_text()
 
             if(game.state == STATE_MENU): # Main menu
+                object_list_index = MENU_OBJECT
                 #Keyboard events
                 if(event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_RETURN:
@@ -626,22 +627,11 @@ async def main():
                 #Mouse events
                 if(event.type == pygame.MOUSEBUTTONDOWN):
                     if event.button == 1: # 1 = left click
-                        mouse_pos = pygame.mouse.get_pos()
-                        for item in ui_object_list[MENU_OBJECT]:
-                            object = ui_object_list[MENU_OBJECT][item]
-                            if object.get_rect().collidepoint(mouse_pos):
-                                if object.is_clickable():
-                                    object.custom_function()
+                        mouse_left_click_event(object_list_index)
 
                 #Touch screen finger events
                 elif(event.type == pygame.FINGERDOWN):
-                    fingers = get_fingers(event)
-                    for finger, finger_pos in fingers.items():
-                        for item in ui_object_list[MENU_OBJECT]:
-                            object = ui_object_list[MENU_OBJECT][item]
-                            if object.get_rect().collidepoint(finger_pos):
-                                if object.is_clickable():
-                                    object.custom_function()
+                    finger_tap_event(event, object_list_index)
 
             elif(game.state == STATE_PLAYING): # playing state
                 #Keyboard events
@@ -678,6 +668,7 @@ async def main():
                             button.not_clicked()
 
             elif(game.state == STATE_SHOW_SOLUTION or game.state == STATE_GAME_WON): #Game/round ended
+                object_list_index = GAME_END_OBJECT
                 #Keyboard events
                 if(event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_RETURN:
@@ -688,22 +679,11 @@ async def main():
                 #Mouse events
                 if(event.type == pygame.MOUSEBUTTONDOWN):
                     if event.button == 1: # 1 = left click
-                        mouse_pos = pygame.mouse.get_pos()
-                        for item in ui_object_list[GAME_END_OBJECT]:
-                            object = ui_object_list[GAME_END_OBJECT][item]
-                            if object.get_rect().collidepoint(mouse_pos):
-                                if object.is_clickable():
-                                    object.custom_function()
+                        mouse_left_click_event(object_list_index)
 
                 #Touch screen finger events
                 elif(event.type == pygame.FINGERDOWN):
-                    fingers = get_fingers(event)
-                    for finger, finger_pos in fingers.items():
-                        for item in ui_object_list[GAME_END_OBJECT]:
-                            object = ui_object_list[GAME_END_OBJECT][item]
-                            if object.get_rect().collidepoint(finger_pos):
-                                if object.is_clickable():
-                                    object.custom_function()
+                    finger_tap_event(event, object_list_index)
             
 
 
@@ -714,6 +694,23 @@ async def main():
         await asyncio.sleep(0)
 
     pygame.quit()
+
+def mouse_left_click_event(object_list_index):
+    mouse_pos = pygame.mouse.get_pos()
+    for item in ui_object_list[object_list_index]:
+        object = ui_object_list[object_list_index][item]
+        if object.get_rect().collidepoint(mouse_pos):
+            if object.is_clickable():
+                object.custom_function()
+
+def finger_tap_event(event, object_list_index):
+    fingers = get_fingers(event)
+    for finger, finger_pos in fingers.items():
+        for item in ui_object_list[object_list_index]:
+            object = ui_object_list[object_list_index][item]
+            if object.get_rect().collidepoint(finger_pos):
+                if object.is_clickable():
+                    object.custom_function()
 
 def get_fingers(event):
     fingers = {}
