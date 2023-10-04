@@ -117,7 +117,7 @@ def read_wordlist():
     list_of_answers = []
     with open("wordlist.txt", "r") as openfile:
         for line in openfile:
-            word = line.strip()
+            word = line.rstrip()
             list_of_answers.append(word)
 
 def get_new_word():
@@ -234,7 +234,7 @@ def check_letter(letter_guessed, button):
         wrong_guess_amount += 1
 
         guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
-        
+
         increment = int((COLOR_MAX_VALUE - INITIAL_DANGER_COLOR[0]) / max_wrong_guesses)
         new_color = ((INITIAL_DANGER_COLOR[0] + increment * wrong_guess_amount), INITIAL_DANGER_COLOR[1], INITIAL_DANGER_COLOR[2])
         guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, new_color)

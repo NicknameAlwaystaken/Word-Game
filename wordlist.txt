@@ -36,10 +36,8 @@ jellybean
 koala
 lemur
 microscope
-narwhal
 octagon
 pineapple
-quokka
 raccoon
 seahorse
 trampoline
@@ -51,15 +49,12 @@ avocado
 broccoli
 cheetah
 daffodil
-elephant
-flamingo
 galaxy
 honeycomb
 jaguar
 kaleidoscope
 leopard
 mango
-narwhal
 ocelot
 peacock
 quasar
@@ -70,7 +65,6 @@ ukulele
 velvet
 walrus
 xenophobia
-yacht
 zucchini
 anteater
 basilisk
@@ -80,7 +74,6 @@ echidna
 firefly
 gecko
 hummingbird
-iguana
 jackal
 kiwi
 leprechaun
@@ -88,7 +81,6 @@ marmoset
 nightingale
 ostrich
 platypus
-quokka
 rhubarb
 starfish
 tarantula
@@ -96,5 +88,203 @@ vulture
 wombat
 xenophobe
 yeti
-zebra
 x-ray
+acrobat
+astronaut
+backpack
+barbecue
+butterfly
+cappuccino
+detective
+encyclopedia
+firefighter
+grandmother
+imagination
+kindergarten
+lighthouse
+neighborhood
+orangutan
+photographer
+questionnaire
+skyscraper
+thermometer
+volleyball
+wheelchair
+alligator
+calculator
+dictionary
+electricity
+accordion
+baguette
+carousel
+doughnut
+harmonica
+igloo
+jigsaw
+kazoo
+lemonade
+maracas
+notebook
+orchestra
+quill
+saxophone
+tambourine
+albatross
+bumblebee
+chrysanthemum
+dalmatian
+echinacea
+firecracker
+geranium
+hyacinth
+jacaranda
+ladybug
+mongoose
+urchin
+yam
+asparagus
+blueberry
+cauliflower
+eggplant
+feather
+grapefruit
+hazelnut
+iceberg
+lavender
+mushroom
+oregano
+parrot
+raspberry
+starfruit
+tangerine
+violet
+xerophyte
+yellowtail
+antelope
+barracuda
+chimpanzee
+gorilla
+hibiscus
+pangolin
+wallaby
+carnivore
+eclipse
+falcon
+gardenia
+lightning
+zephyr
+amphitheater
+bison
+hyena
+aeroplane
+baboon
+cactus
+accessory
+bohemian
+catwalk
+designer
+elegance
+fedora
+glitter
+haute couture
+infinity scarf
+jumpsuit
+kimono
+leggings
+minimalist
+nail polish
+overalls
+poncho
+quarter-zip
+raincoat
+sequins
+tuxedo
+umbrella hat
+waistcoat
+yoga pants
+zebra print
+arcade
+joystick
+Pac-Man
+Donkey Kong
+Atari
+Space Invaders
+Pong
+pinball
+Tetris
+Mario
+platformer
+Role-Playing Game
+First-Person Shooter
+Multiplayer Online Battle Arena
+Real-Time Strategy
+sports game
+puzzle game
+racing game
+simulation
+adventure
+PlayStation
+Xbox
+Nintendo
+Steam
+mobile
+console
+handheld
+emulator
+respawn
+power-up
+easter egg
+cheat code
+LAN
+DLC
+gamer tag
+multiplayer
+high score
+quest
+Lara Croft
+Master Chief
+Link
+Sonic the Hedgehog
+Samus Aran
+Kratos
+Mario Kart
+Final Fantasy
+Resident Evil
+Minecraft
+headset
+controller
+mousepad
+chair
+VR headset
+mouse
+keyboard
+monitor
+coding
+beta testing
+debugging
+level design
+scripting
+game engine
+playtesting
+game jam
+polygon
+shaders
+esports
+tournament
+streamer
+Dota 2
+League of Legends
+Overwatch
+Twitch
+Fortnite
+caster
+victory
+defeat
+frustration
+elation
+adrenaline
+suspense
+immersion
+nostalgia
+competition
+camaraderie
