@@ -17,11 +17,20 @@ INIT_SCREEN_HEIGHT = 600
 RED_COLOR = (200, 50, 25)
 GREEN_COLOR = (50, 200, 25)
 DARK_BLUE_COLOR = (50, 50, 150)
+LIGHT_BLUE_COLOR = (101, 130, 235)
 BLACK_COLOR = (0, 0, 0)
 WHITE_COLOR = (255, 255, 255)
 
+COLOR_MAX_VALUE = 255
+
+INITIAL_DANGER_COLOR = (50,50,50)
+
 SOLVED_COLOR = GREEN_COLOR
 UNSOLVED_COLOR = RED_COLOR
+
+MAIN_MENU_COLOR = LIGHT_BLUE_COLOR
+GAME_BACKGROUND_COLOR = LIGHT_BLUE_COLOR
+
 
 DEFAULT_BUTTON_FONT_SIZE = 50
 
@@ -46,7 +55,7 @@ solution_text = len(answer) * "_"
 event_text = ""
 event_text_surface = EVENT_FONT.render(event_text, True, BLACK_COLOR)
 wrong_guess_amount = 0
-max_wrong_guesses = 5
+max_wrong_guesses = 8
 
 guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
 
@@ -59,7 +68,7 @@ continue_text_surface = CONTINUE_FONT.render(continue_text, True, DARK_BLUE_COLO
 clock = pygame.time.Clock()
 
 STATE_MENU = "MENU"
-STATE_RUNNING = "RUNNING"
+STATE_PLAYING = "RUNNING"
 STATE_SHOW_SOLUTION = "SHOW_SOLUTION"
 STATE_GAME_WON = "GAME_WON"
 
@@ -71,7 +80,7 @@ class Game:
         self.state = state
     
     def update(self):
-        if self.state == STATE_RUNNING or self.state == STATE_SHOW_SOLUTION or self.state == STATE_GAME_WON:
+        if self.state == STATE_PLAYING or self.state == STATE_SHOW_SOLUTION or self.state == STATE_GAME_WON:
             for button in letter_buttons:
                 button.draw()
 
@@ -111,7 +120,7 @@ def get_new_word():
 
 def new_round():
     reset_game()
-    game.set_state(STATE_RUNNING)
+    game.set_state(STATE_PLAYING)
 
 def reset_game():
     global answer, guessed_letters, solution_text, event_text, wrong_guess_amount
@@ -121,7 +130,6 @@ def reset_game():
     guessed_letters = []
 
     wrong_guess_amount = 0
-    max_wrong_guesses = 8
 
     reset_buttons()
     update_solution()
@@ -154,7 +162,8 @@ def init_ui_text():
     guessed_text_rect.y = (((screen_size_y / 2) - guessed_text_surface.get_rect()[3]) / 2)
 
     guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
-    guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, BLACK_COLOR)
+    new_color = (((COLOR_MAX_VALUE - INITIAL_DANGER_COLOR[0] / max_wrong_guesses) * wrong_guess_amount), INITIAL_DANGER_COLOR[1], INITIAL_DANGER_COLOR[2])
+    guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, new_color)
     guesses_left_text_rect = guesses_left_text_surface.get_rect()
     guesses_left_text_rect.x = 5
     guesses_left_text_rect.y = 10
@@ -211,7 +220,10 @@ def check_letter(letter_guessed, button):
         display_event_text(f"Character '{letter_guessed}' not in word", RED_COLOR)
         wrong_guess_amount += 1
         guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
-        guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, BLACK_COLOR)
+        increment = int((COLOR_MAX_VALUE - INITIAL_DANGER_COLOR[0]) / max_wrong_guesses)
+        new_color = ((INITIAL_DANGER_COLOR[0] + increment * wrong_guess_amount), INITIAL_DANGER_COLOR[1], INITIAL_DANGER_COLOR[2])
+        print(new_color)
+        guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, new_color)
         button.change_color(RED_COLOR)
     
     update_solution()
@@ -315,11 +327,17 @@ def fit_letter_buttons():
     print(f"columns: {button_columns} rows: {button_rows} space: {button_columns * button_rows} required: {max_characters}")
 
 def fit_ui_text():
-    global solution_text_rect, solution_text_surface, event_text_rect, event_text_surface, guessed_text_rect, guessed_text_surface, guesses_left_text_rect, guesses_left_text_surface, start_game_text_surface, start_game_text_rect
+    global solution_text_rect, solution_text_surface, event_text_rect, event_text_surface, guessed_text_rect, guessed_text_surface
+    global guesses_left_text_rect, guesses_left_text_surface, start_game_text_surface, start_game_text_rect
+    global continue_text_rect, continue_text_surface
 
     start_game_text_rect = start_game_text_surface.get_rect()
     start_game_text_rect.x = ((screen_size_x - start_game_text_surface.get_rect()[2]) / 2)
     start_game_text_rect.y = ((screen_size_y - start_game_text_surface.get_rect()[3]) / 2)
+    
+    continue_text_rect = continue_text_surface.get_rect()
+    continue_text_rect.x = (screen_size_x - continue_text_surface.get_rect()[2]) - 5
+    continue_text_rect.y = 5
 
     solution_text_rect = solution_text_surface.get_rect()
     solution_text_rect.x = ((screen_size_x - solution_text_surface.get_rect()[2]) / 2)
@@ -352,6 +370,7 @@ async def main():
     running =  True
 
     while running:
+        screen.fill(WHITE_COLOR)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -361,48 +380,73 @@ async def main():
                 fit_letter_buttons()
                 fit_ui_text()
 
-            #Mouse events
-            if(event.type == pygame.MOUSEBUTTONDOWN):
-                mouse_pos = pygame.mouse.get_pos()
-
-                if(game.state == STATE_RUNNING):
+            if(game.state == STATE_PLAYING): # playing state
+                #Keyboard events
+                if(event.type == pygame.KEYDOWN):
+                    for button in letter_buttons:
+                        if chr(event.key).upper() == button.letter:
+                            button.clicked()
+                        else:
+                            button.not_clicked()
+                #Mouse events
+                if(event.type == pygame.MOUSEBUTTONDOWN):
+                    mouse_pos = pygame.mouse.get_pos()
                     for button in letter_buttons:
                         button_rect = button.get_rect()
                         if button_rect.collidepoint(mouse_pos):
                             button.clicked()
                         else:
                             button.not_clicked()
-                elif(game.state == STATE_MENU):
-                    if start_game_text_rect.collidepoint(mouse_pos):
-                        game.set_state(STATE_RUNNING)
-                elif(game.state == STATE_SHOW_SOLUTION or game.state == STATE_GAME_WON):
-                    if continue_text_rect.collidepoint(mouse_pos):
-                        new_round()
-            
-            #Touch screen finger events
-            elif(event.type == pygame.FINGERDOWN):
-                fingers = {}
-                x = event.x * screen.get_height()
-                y = event.y * screen.get_width()
-                fingers[event.finger_id] = x, y
-
-                if(game.state == STATE_RUNNING):
+                            
+                #Touch screen finger events
+                elif(event.type == pygame.FINGERDOWN):
+                    fingers = get_fingers(event)
                     for finger, finger_pos in fingers.items():
                         if button_rect.collidepoint(finger_pos):
                             button.clicked()
                         else:
                             button.not_clicked()
-                elif(game.state == STATE_MENU):
+
+            elif(game.state == STATE_MENU): # Main menu
+                #Keyboard events
+                if(event.type == pygame.KEYDOWN):
+                    if event.key == pygame.K_RETURN:
+                        game.set_state(STATE_PLAYING)
+
+                #Mouse events
+                if(event.type == pygame.MOUSEBUTTONDOWN):
+                    mouse_pos = pygame.mouse.get_pos()
+                    if start_game_text_rect.collidepoint(mouse_pos):
+                        game.set_state(STATE_PLAYING)
+
+                #Touch screen finger events
+                elif(event.type == pygame.FINGERDOWN):
+                    fingers = get_fingers(event)
                     for finger, finger_pos in fingers.items():
                         if start_game_text_rect.collidepoint(finger_pos):
-                            game.set_state(STATE_RUNNING)
-                elif(game.state == STATE_SHOW_SOLUTION or game.state == STATE_GAME_WON):
+                            game.set_state(STATE_PLAYING)
+
+            elif(game.state == STATE_SHOW_SOLUTION or game.state == STATE_GAME_WON): #Game/round ended
+                #Keyboard events
+                if(event.type == pygame.KEYDOWN):
+                    if event.key == pygame.K_RETURN:
+                        new_round()
+
+                #Mouse events
+                if(event.type == pygame.MOUSEBUTTONDOWN):
+                    mouse_pos = pygame.mouse.get_pos()
+                    if continue_text_rect.collidepoint(mouse_pos):
+                        new_round()
+
+                #Touch screen finger events
+                elif(event.type == pygame.FINGERDOWN):
+                    fingers = get_fingers(event)
                     for finger, finger_pos in fingers.items():
                         if continue_text_rect.collidepoint(finger_pos):
                             new_round()
+            
 
 
-        screen.fill((255,255,255))
         game.update()
         
         pygame.display.flip()
@@ -410,5 +454,12 @@ async def main():
         await asyncio.sleep(0)
 
     pygame.quit()
+
+def get_fingers(event):
+    fingers = {}
+    x = event.x * screen.get_height()
+    y = event.y * screen.get_width()
+    fingers[event.finger_id] = x, y
+    return fingers
 
 asyncio.run(main())
