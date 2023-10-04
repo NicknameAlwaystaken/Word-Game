@@ -15,21 +15,23 @@ INIT_SCREEN_WIDTH = 800
 INIT_SCREEN_HEIGHT = 600
 
 RED_COLOR = (200, 50, 25)
-GREEN_COLOR = (50, 200, 25)
+GREEN_COLOR = (8, 153, 20)
 DARK_BLUE_COLOR = (50, 50, 150)
-LIGHT_BLUE_COLOR = (101, 130, 235)
+LIGHT_BLUE_COLOR = (138, 160, 242)
 BLACK_COLOR = (0, 0, 0)
 WHITE_COLOR = (255, 255, 255)
 
 COLOR_MAX_VALUE = 255
 
-INITIAL_DANGER_COLOR = (50,50,50)
+INITIAL_DANGER_COLOR = (50, 50, 50)
 
 SOLVED_COLOR = GREEN_COLOR
 UNSOLVED_COLOR = RED_COLOR
 
-MAIN_MENU_COLOR = LIGHT_BLUE_COLOR
-GAME_BACKGROUND_COLOR = LIGHT_BLUE_COLOR
+TEMP_COLOR_HOLDER = (174, 199, 245)
+
+MENU_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
+GAME_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
 
 
 DEFAULT_BUTTON_FONT_SIZE = 50
@@ -81,6 +83,7 @@ class Game:
     
     def update(self):
         if self.state == STATE_PLAYING or self.state == STATE_SHOW_SOLUTION or self.state == STATE_GAME_WON:
+            screen.fill(GAME_BACKGROUND_COLOR)
             for button in letter_buttons:
                 button.draw()
 
@@ -90,8 +93,12 @@ class Game:
             screen.blit(guesses_left_text_surface, guesses_left_text_rect)
             if self.state == STATE_SHOW_SOLUTION or self.state == STATE_GAME_WON:
                 screen.blit(continue_text_surface, continue_text_rect)
-        if self.state == STATE_MENU:
+        elif self.state == STATE_MENU:
+            screen.fill(MENU_BACKGROUND_COLOR)
             screen.blit(start_game_text_surface, start_game_text_rect)
+        else:
+            screen.fill(WHITE_COLOR)
+
 
 
 game = Game()
@@ -370,7 +377,6 @@ async def main():
     running =  True
 
     while running:
-        screen.fill(WHITE_COLOR)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -380,7 +386,26 @@ async def main():
                 fit_letter_buttons()
                 fit_ui_text()
 
-            if(game.state == STATE_PLAYING): # playing state
+            if(game.state == STATE_MENU): # Main menu
+                #Keyboard events
+                if(event.type == pygame.KEYDOWN):
+                    if event.key == pygame.K_RETURN:
+                        game.set_state(STATE_PLAYING)
+
+                #Mouse events
+                if(event.type == pygame.MOUSEBUTTONDOWN):
+                    mouse_pos = pygame.mouse.get_pos()
+                    if start_game_text_rect.collidepoint(mouse_pos):
+                        game.set_state(STATE_PLAYING)
+
+                #Touch screen finger events
+                elif(event.type == pygame.FINGERDOWN):
+                    fingers = get_fingers(event)
+                    for finger, finger_pos in fingers.items():
+                        if start_game_text_rect.collidepoint(finger_pos):
+                            game.set_state(STATE_PLAYING)
+
+            elif(game.state == STATE_PLAYING): # playing state
                 #Keyboard events
                 if(event.type == pygame.KEYDOWN):
                     for button in letter_buttons:
@@ -406,25 +431,6 @@ async def main():
                             button.clicked()
                         else:
                             button.not_clicked()
-
-            elif(game.state == STATE_MENU): # Main menu
-                #Keyboard events
-                if(event.type == pygame.KEYDOWN):
-                    if event.key == pygame.K_RETURN:
-                        game.set_state(STATE_PLAYING)
-
-                #Mouse events
-                if(event.type == pygame.MOUSEBUTTONDOWN):
-                    mouse_pos = pygame.mouse.get_pos()
-                    if start_game_text_rect.collidepoint(mouse_pos):
-                        game.set_state(STATE_PLAYING)
-
-                #Touch screen finger events
-                elif(event.type == pygame.FINGERDOWN):
-                    fingers = get_fingers(event)
-                    for finger, finger_pos in fingers.items():
-                        if start_game_text_rect.collidepoint(finger_pos):
-                            game.set_state(STATE_PLAYING)
 
             elif(game.state == STATE_SHOW_SOLUTION or game.state == STATE_GAME_WON): #Game/round ended
                 #Keyboard events
