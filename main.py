@@ -274,10 +274,6 @@ def start_game():
     game.set_state(STATE_PLAYING)
 
 def init_ui_text(ui_object_list):
-    global answer, guesses_left_text_surface, guesses_left_text_rect
-    global guessed_text_surface, guessed_text_rect, continue_text_surface, continue_text_rect
-    global event_text_surface, event_text
-
     empty_string = ""
     
     #Main menu ui text
@@ -326,7 +322,7 @@ def game_won(answer):
     global guesses_left_text_surface
 
     guesses_left_text = f""
-    guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, BLACK_COLOR)
+    ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT].set_text(guesses_left_text)
 
     ui_object_list[GAME_OBJECT][SOLUTION_TEXT].set_text(answer, SOLVED_COLOR)
 
@@ -334,7 +330,7 @@ def solve_word(answer):
     global guesses_left_text, guesses_left_text_surface
 
     guesses_left_text = f""
-    guesses_left_text_surface = GUESSES_LEFT_FONT.render(guesses_left_text, True, BLACK_COLOR)
+    ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT].set_text(guesses_left_text)
 
     ui_object_list[GAME_OBJECT][SOLUTION_TEXT].set_text(answer, UNSOLVED_COLOR)
 
@@ -357,7 +353,7 @@ def check_solution(answer):
 
 
 def check_letter(letter_guessed, button):
-    global wrong_guess_amount, answer, guesses_left_text, guesses_left_text_surface, ui_object_list
+    global wrong_guess_amount, answer, ui_object_list
     event_text_object = ui_object_list[GAME_OBJECT][EVENT_TEXT]
     guessed_letters_object = ui_object_list[GAME_OBJECT][GUESSED_LETTERS_TEXT]
     guessed_letters = guessed_letters_object.get_text()
@@ -461,9 +457,6 @@ def fit_letter_buttons():
             index_y += 1
 
 def fit_ui_text():
-    global guessed_text_rect, guessed_text_surface
-    global guesses_left_text_rect, guesses_left_text_surface
-
     #Start menu ui text
     start_menu_layout_size_y = screen_size_y / 2
     start_menu_layout_padding_y = (start_menu_layout_size_y / 2) + DEFAULT_FONT_SIZE
@@ -481,7 +474,6 @@ def fit_ui_text():
 
         menu_order += 1
 
-    
 
     #Playing state ui text
     solution_text = ui_object_list[GAME_OBJECT][SOLUTION_TEXT]
@@ -607,7 +599,6 @@ ui_object_list = {}
 
 
 async def main():
-
     global screen_size_x, screen_size_y
 
     initialize_game()
@@ -659,10 +650,13 @@ async def main():
                         go_to_main_menu()
                     else:
                         for button in letter_buttons:
-                            if chr(event.key).upper() == button.letter:
-                                button.clicked()
-                            else:
-                                button.not_clicked()
+                            try:
+                                if chr(event.key).upper() == button.letter:
+                                    button.clicked()
+                                else:
+                                    button.not_clicked()
+                            except:
+                                continue
                 #Mouse events
                 if(event.type == pygame.MOUSEBUTTONDOWN):
                     if event.button == 1: # 1 = left click
