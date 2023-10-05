@@ -688,7 +688,14 @@ async def main():
 
                 #Touch screen finger events
                 if(event.type == pygame.FINGERDOWN):
-                    finger_tap_event(event, object_list_index)
+                    fingers = get_fingers(event)
+                    for finger, finger_pos in fingers.items():
+                        for item in ui_object_list[object_list_index]:
+                            object = ui_object_list[object_list_index][item]
+                            if object.get_rect().collidepoint(finger_pos):
+                                if object.is_clickable():
+                                    object.custom_function()
+                    #finger_tap_event(event, object_list_index)
 
             elif(game.state == STATE_PLAYING): # playing state
                 #Keyboard events
