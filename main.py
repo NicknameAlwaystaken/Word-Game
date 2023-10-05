@@ -45,7 +45,7 @@ class Game:
             screen.fill(WHITE_COLOR)
 
 class Interactive_Text:
-    def __init__(self, text, color, font, custom_function = None, clickable = False):
+    def __init__(self, text: string, color: pygame.color.Color, font: pygame.font.Font, custom_function = None, clickable: bool = False):
 
         self.__clickable = clickable
         self.__custom_function = custom_function
@@ -182,24 +182,24 @@ class Interactive_Text:
 class Letter_Button():
 
     def __init__(self, x, y, letter):
-        self.text_surface = BUTTON_FONT.render(letter, True, BLACK_COLOR)
-        self.rect = self.text_surface.get_rect()
-        self.rect.topleft = (x,y)
+        self.__surface = BUTTON_FONT.render(letter, True, BLACK_COLOR)
+        self.__rect = self.__surface.get_rect()
+        self.__rect.center = (x,y)
         self.letter = letter
         self.is_clicked = False
         self.correct_letter = None
         self.color = BLACK_COLOR
 
     def change_color(self, color):
-        self.text_surface = BUTTON_FONT.render(self.letter, True, color)
+        self.__surface = BUTTON_FONT.render(self.letter, True, color)
         self.color = color
         if color == RED_COLOR: 
-            self.text_surface.set_alpha(100)
+            self.__surface.set_alpha(100)
         else:
-            self.text_surface.set_alpha(255)
+            self.__surface.set_alpha(255)
     
     def draw(self):
-        screen.blit(self.text_surface, (self.rect.x, self.rect.y))
+        screen.blit(self.__surface, self.__rect)
     
     def clicked(self):
         self.is_clicked = True
@@ -208,22 +208,33 @@ class Letter_Button():
     def not_clicked(self):
         self.is_clicked = False
 
-    def change_location(self, x, y):
-        self.rect.topleft = (x,y)
+    def set_rect(self, rect):
+        self.__rect = rect
+
+    def set_rect_center(self, rect):
+        self.__previous_rect = self.__rect
+        self.__rect.center = rect
     
     def reset_size(self):
-        self.text_surface = BUTTON_FONT.render(self.letter, True, self.color)
+        self.__surface = BUTTON_FONT.render(self.letter, True, self.color)
+        self.__rect = self.__surface.get_rect()
 
     def get_rect(self):
-        return self.rect
+        return self.__rect
+    
+    def get_surface(self):
+        return self.__surface
 
 
 def initialize_game():
-    global letter_buttons, ui_object_list
+    global letter_buttons, ui_object_list, object_list_index
     random.seed()
     letter_buttons = []
     for letter in string.ascii_uppercase:
         letter_buttons.append(Letter_Button(0, 0, letter))
+    
+    object_list_index = MENU_OBJECT
+
     fit_letter_buttons()
     init_ui_text(ui_object_list)
 
@@ -323,7 +334,7 @@ def init_ui_text(ui_object_list):
     #Playing state ui text
     ui_object_list[GAME_OBJECT] = {}
 
-    # Menu items go from bottom to top as order
+    # Items are ontop of each other
 
     ui_object_list[GAME_OBJECT][SOLUTION_TEXT] = Interactive_Text(solution_text, BLACK_COLOR, SOLUTION_FONT)
 
@@ -332,14 +343,21 @@ def init_ui_text(ui_object_list):
     
     ui_object_list[GAME_OBJECT][GUESSED_LETTERS_TEXT] = Interactive_Text(empty_string, BLACK_COLOR, GUESS_FONT)
     
+    # Other items
+
+    back_button_text = f"BACK"
+    ui_object_list[GAME_OBJECT][BACK_BUTTON] = Interactive_Text(back_button_text, BLACK_COLOR, BACK_BUTTON_FONT, go_to_main_menu, True)
 
     guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
     new_color = (((COLOR_MAX_VALUE - INITIAL_DANGER_COLOR[0] / max_wrong_guesses) * wrong_guess_amount), INITIAL_DANGER_COLOR[1], INITIAL_DANGER_COLOR[2])
     ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT] = Interactive_Text(guesses_left_text, new_color, GUESSES_LEFT_FONT)
 
-    #Post game ui text
+    #Post game ui items
     ui_object_list[GAME_END_OBJECT] = {}
     
+    back_button_text = f"BACK"
+    ui_object_list[GAME_END_OBJECT][BACK_BUTTON] = Interactive_Text(back_button_text, BLACK_COLOR, BACK_BUTTON_FONT, go_to_main_menu, True) # back button is twice, easier to do it this way, may need changing later.
+
     continue_text = f"Click here to continue!"
     ui_object_list[GAME_END_OBJECT][CONTINUE_TEXT] = Interactive_Text(continue_text, DARK_BLUE_COLOR, CONTINUE_FONT, new_round, True)
 
@@ -435,13 +453,23 @@ def check_letter(letter_guessed, button):
 
 
 def fit_letter_buttons():
-    global letter_buttons, screen_size_x, screen_size_y
-    default_spacing = 70
-    button_columns = int(screen_size_x / default_spacing)
-    button_rows = int((screen_size_y / 2) / default_spacing)
+    global letter_buttons
 
-    is_extra_space = True
+    screen_size_x, screen_size_y = screen.get_size()
+
+    letter_buttons[0].reset_size()
+    letter_size = letter_buttons[0].get_surface().get_height()
+
+    keyboard_layout_size_x = screen_size_x * 3/5
+    keyboard_padding_x = screen_size_x * 1/5
+
+    keyboard_layout_size_y = screen_size_y / 2
+    keyboard_padding_y = keyboard_layout_size_y
+
     max_characters = len(string.ascii_uppercase)
+
+    button_columns = int(keyboard_layout_size_x / letter_size)
+    button_rows = int(keyboard_layout_size_y / letter_size)
 
     while button_columns * (button_rows - 1) > max_characters:
         button_columns -= 1
@@ -450,30 +478,37 @@ def fit_letter_buttons():
 
     while button_columns * button_rows < max_characters:
         button_columns += 1
-        is_extra_space = False
 
     index_x = 0
     index_y = 0
-    row_padding = 0
 
-    if is_extra_space:
-        row_padding = (screen_size_x - (button_columns * (default_spacing + 1)) )
-
-    button_layout_size_x = screen_size_x - row_padding
-    button_layout_size_y = screen_size_y / 2
+    max_button_distance_x = letter_size * 1.5
+    max_button_distance_y = letter_size * 1.5
+    
     for button in letter_buttons:
-        x_location = button_layout_size_x/button_columns * index_x + row_padding / 2
-        y_location = (button_layout_size_y/button_rows * index_y) + button_layout_size_y
+        letter_distance_x = keyboard_layout_size_x/(button_columns - 1) # no clue why button columns - 1 works nicely, i'll figure it out later
+        letter_distance_y = keyboard_layout_size_y/button_rows
+        if letter_distance_x >= max_button_distance_x:
+            keyboard_padding_x = (screen_size_x - (max_button_distance_x * (button_columns - 1))) / 2 # no clue why button columns - 1 works nicely, i'll figure it out later
+            
+        x_location = (min(letter_distance_x, max_button_distance_x) * index_x) + keyboard_padding_x
+        y_location = (min(letter_distance_y, max_button_distance_y) * index_y) + keyboard_padding_y
 
-        button.change_location(int(x_location), int(y_location))
         button.reset_size()
+        button_rect = button.get_surface().get_rect()
+        button_rect.x = x_location
+        button_rect.y = y_location
+        button.set_rect(button_rect)
+        button.set_rect_center((button_rect.x, button_rect.y))
 
         index_x += 1
         if index_x >= button_columns:
             index_x = 0
             index_y += 1
 
+
 def fit_ui_text():
+    global debug_text_rect, debug_timer_text_rect
     #Start menu ui text
     start_menu_layout_size_y = screen_size_y / 2
     start_menu_layout_padding_y = screen_size_y / 5
@@ -486,21 +521,21 @@ def fit_ui_text():
         object_rect = object.get_surface().get_rect()
         object_rect.x = screen_size_x / 2
         object_rect.y = align_ui_info(start_menu_layout_size_y, start_menu_layout_padding_y, menu_button_amount, menu_order)
-        #object_rect.y = screen_size_y - (((start_menu_layout_size_y / menu_button_amount) / 2 * (menu_order * 2 + 1)) + start_menu_layout_padding_y)
         object.set_rect(object_rect)
         object.set_rect_center((object_rect.x, object_rect.y))
         object.update_surface()
 
         menu_order += 1
 
-    #size of layout not taken by letter buttons order goes from bottom to top
+    #Playing state ui text
+
+    #letter buttons order goes from bottom to top
     game_info_layout_size_y = screen_size_y / 3
     game_info_layout_padding_y = 15
     game_info_amount = 3
 
     info_order = 0
 
-    #Playing state ui text
     event_text = ui_object_list[GAME_OBJECT][EVENT_TEXT]
     event_text.update_surface()
     event_text_rect = event_text.get_surface().get_rect()
@@ -529,19 +564,35 @@ def fit_ui_text():
     solution_text.set_rect(solution_text_rect)
     solution_text.set_rect_center((solution_text_rect.x, solution_text_rect.y))
     
+    #end of layout
+
+    back_button = ui_object_list[GAME_OBJECT][BACK_BUTTON] #Twice for GAME_OBJECT, probably needs changing later. Was easy solution
+    back_button_rect = back_button.get_surface().get_rect()
+    back_button_rect.topright = (screen_size_x - 30, 15)
+    back_button.set_rect(back_button_rect)
+
     guesses_left = ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT]
-    guesses_left_text_rect = guesses_left.get_rect()
-    guesses_left_text_rect.x = 5
-    guesses_left_text_rect.y = 10
+    guesses_left_text_rect = guesses_left.get_surface().get_rect()
+    guesses_left_text_rect.topleft = (5, 10)
     guesses_left.set_rect(guesses_left_text_rect)
 
 
     #Post game ui text
+
+    back_button = ui_object_list[GAME_END_OBJECT][BACK_BUTTON] #Twice for GAME_END_OBJECT, probably needs changing later. Was easy solution
+    back_button_rect = back_button.get_surface().get_rect()
+    back_button_rect.topright = (screen_size_x - 30, 15)
+    back_button.set_rect(back_button_rect)
+
     continue_text = ui_object_list[GAME_END_OBJECT][CONTINUE_TEXT]
     continue_text_rect = continue_text.get_rect()
     continue_text_rect.x = 5
     continue_text_rect.y = 10
     continue_text.set_rect(continue_text_rect)
+
+    #debug text
+    debug_text_rect = (0, screen_size_y - 15)
+    debug_timer_text_rect.center = (screen_size_x - 10, screen_size_y - 15)
 
 def align_ui_info(layout_size_y, layout_padding_y, info_amount, info_order):
     return (layout_size_y / info_amount) * (info_order + 1) + layout_padding_y
@@ -595,6 +646,10 @@ DEFAULT_FONT_SIZE = 50
 
 FONT_FILE_NAME = "YoungSerif-Regular.ttf"
 
+#debug related
+DEBUG_FONT = pygame.font.Font(FONT_FILE_NAME, 10)
+DEBUG_TIMER_FONT = pygame.font.Font(FONT_FILE_NAME, 10)
+
 # In game fonts
 GUESS_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
 SOLUTION_FONT = pygame.font.Font(FONT_FILE_NAME, 40)
@@ -606,6 +661,7 @@ GUESSES_LEFT_FONT = pygame.font.Font(FONT_FILE_NAME, 25)
 START_GAME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
 SELECT_THEME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
 SELECT_DIFFICULTY_THEME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
+BACK_BUTTON_FONT = pygame.font.Font(FONT_FILE_NAME, 40)
 
 # Post game fonts
 CONTINUE_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
@@ -646,6 +702,8 @@ EVENT_TEXT = "EVENT_TEXT"
 GUESSED_LETTERS_TEXT = "GUESSED_LETTERS_TEXT"
 GUESSES_LEFT_TEXT = "GUESSES_LEFT_TEXT"
 
+BACK_BUTTON = "BACK_BUTTON"
+
 # menu related objects
 MENU_OBJECT = "MENU_OBJECT"
 
@@ -655,16 +713,38 @@ SELECT_DIFFICULTY_BUTTON = "SELECT_DIFFICULTY_BUTTON"
 
 ui_object_list = {}
 
+debug_mode = False
+debug_text = ""
+if debug_mode:
+    debug_text = "debug text"
+debug_text_surface = DEBUG_FONT.render(debug_text, True, BLACK_COLOR)
+debug_text_rect = debug_text_surface.get_rect()
+debug_text_rect = (0, screen_size_y - 15)
+
+debug_timer_text = 0
+debug_timer_text_surface = DEBUG_TIMER_FONT.render(str(debug_timer_text), True, BLACK_COLOR)
+debug_timer_text_rect = debug_timer_text_surface.get_rect()
+debug_timer_text_rect.center = (screen_size_x - 10, screen_size_y - 15)
+
+DEBUG_TIMER = pygame.USEREVENT
+timer = pygame.time.set_timer(DEBUG_TIMER, 1000)
+
 
 async def main():
-    global screen_size_x, screen_size_y
+    global screen_size_x, screen_size_y, debug_text_surface, debug_text_rect, debug_timer_text_surface, debug_timer_text, object_list_index
 
     initialize_game()
 
+    is_finger_lifted = True
     running =  True
 
     while running:
-        for event in pygame.event.get():
+        events = pygame.event.get()
+        for event in events:
+            if event.type == DEBUG_TIMER:
+                debug_timer_text += 1
+                debug_timer_text_surface = DEBUG_FONT.render(str(debug_timer_text), True, BLACK_COLOR)
+
             if event.type == pygame.QUIT:
                 running = False
 
@@ -672,6 +752,9 @@ async def main():
                 screen_size_x, screen_size_y = screen.get_size()
                 fit_letter_buttons()
                 fit_ui_text()
+            
+            if event.type == pygame.FINGERUP:
+                is_finger_lifted = True
 
             if(game.state == STATE_MENU): # Main menu
                 object_list_index = MENU_OBJECT
@@ -680,28 +763,27 @@ async def main():
                     if event.key == pygame.K_RETURN:
                         start_game()
                         game.set_state(STATE_PLAYING)
+                        break
 
                 #Mouse events
-                if(event.type == pygame.MOUSEBUTTONDOWN):
+                elif(event.type == pygame.MOUSEBUTTONDOWN):
                     if event.button == 1: # 1 = left click
                         mouse_left_click_event(object_list_index)
+                        break
 
                 #Touch screen finger events
-                if(event.type == pygame.FINGERDOWN):
-                    fingers = get_fingers(event)
-                    for finger, finger_pos in fingers.items():
-                        for item in ui_object_list[object_list_index]:
-                            object = ui_object_list[object_list_index][item]
-                            if object.get_rect().collidepoint(finger_pos):
-                                if object.is_clickable():
-                                    object.custom_function()
-                    #finger_tap_event(event, object_list_index)
+                elif(event.type == pygame.FINGERDOWN and is_finger_lifted):
+                    finger_tap_event(event, object_list_index)
+                    is_finger_lifted = False
+                    break
 
             elif(game.state == STATE_PLAYING): # playing state
+                object_list_index = GAME_OBJECT
                 #Keyboard events
                 if(event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_ESCAPE:
                         go_to_main_menu()
+                        break
                     else:
                         for button in letter_buttons:
                             try:
@@ -710,9 +792,10 @@ async def main():
                                 else:
                                     button.not_clicked()
                             except:
-                                continue
+                                break
+                        break
                 #Mouse events
-                if(event.type == pygame.MOUSEBUTTONDOWN):
+                elif(event.type == pygame.MOUSEBUTTONDOWN):
                     if event.button == 1: # 1 = left click
                         mouse_pos = pygame.mouse.get_pos()
                         for button in letter_buttons:
@@ -721,15 +804,19 @@ async def main():
                                 button.clicked()
                             else:
                                 button.not_clicked()
+                        mouse_left_click_event(object_list_index)
+                        break
                             
                 #Touch screen finger events
-                if(event.type == pygame.FINGERDOWN):
-                    fingers = get_fingers(event)
-                    for finger, finger_pos in fingers.items():
-                        if button_rect.collidepoint(finger_pos):
-                            button.clicked()
-                        else:
-                            button.not_clicked()
+                elif(event.type == pygame.FINGERDOWN and is_finger_lifted):
+                    finger_pos = (event.x * screen.get_height(), event.y * screen.get_width())
+                    if button_rect.collidepoint(finger_pos):
+                        button.clicked()
+                    else:
+                        button.not_clicked()
+                    finger_tap_event(event, object_list_index)
+                    is_finger_lifted = False
+                    break
 
             elif(game.state == STATE_SHOW_SOLUTION or game.state == STATE_GAME_WON): #Game/round ended
                 object_list_index = GAME_END_OBJECT
@@ -737,21 +824,28 @@ async def main():
                 if(event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_RETURN:
                         new_round()
+                        break
                     elif event.key == pygame.K_ESCAPE:
                         go_to_main_menu()
+                        break
 
                 #Mouse events
-                if(event.type == pygame.MOUSEBUTTONDOWN):
+                elif(event.type == pygame.MOUSEBUTTONDOWN):
                     if event.button == 1: # 1 = left click
                         mouse_left_click_event(object_list_index)
+                        break
 
                 #Touch screen finger events
-                elif(event.type == pygame.FINGERDOWN):
+                elif(event.type == pygame.FINGERDOWN and is_finger_lifted):
                     finger_tap_event(event, object_list_index)
+                    break
             
 
 
         game.update()
+        if debug_mode:
+            screen.blit(debug_text_surface, debug_text_rect)
+            screen.blit(debug_timer_text_surface, debug_timer_text_rect)
         
         pygame.display.flip()
         clock.tick(60)
@@ -761,26 +855,24 @@ async def main():
 
 def mouse_left_click_event(object_list_index):
     mouse_pos = pygame.mouse.get_pos()
-    for item in ui_object_list[object_list_index]:
-        object = ui_object_list[object_list_index][item]
+    object_list = ui_object_list[object_list_index]
+    for item in object_list:
+        object = object_list[item]
         if object.get_rect().collidepoint(mouse_pos):
             if object.is_clickable():
                 object.custom_function()
+                return
 
 def finger_tap_event(event, object_list_index):
-    fingers = get_fingers(event)
-    for finger, finger_pos in fingers.items():
-        for item in ui_object_list[object_list_index]:
-            object = ui_object_list[object_list_index][item]
-            if object.get_rect().collidepoint(finger_pos):
-                if object.is_clickable():
-                    object.custom_function()
-
-def get_fingers(event):
-    fingers = {}
-    x = event.x * screen.get_height()
-    y = event.y * screen.get_width()
-    fingers[event.finger_id] = x, y
-    return fingers
+    global debug_text_surface, screen
+    finger_pos = (event.x * screen.get_height(), event.y * screen.get_width())
+    
+    object_list = ui_object_list[object_list_index]
+    for item in object_list:
+        object = object_list[item]
+        if object.get_rect().collidepoint(finger_pos):
+            if object.is_clickable():
+                object.custom_function()
+                return
 
 asyncio.run(main())
