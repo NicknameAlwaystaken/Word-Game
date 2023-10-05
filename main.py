@@ -147,6 +147,11 @@ class Interactive_Text:
         self.__previous_rect = self.__rect
         self.__rect = self.__previous_rect
         
+        
+    def set_rect_center(self, rect):
+        self.__previous_rect = self.__rect
+        self.__rect.center = rect
+        
     def set_rect(self, rect):
         self.__previous_rect = self.__rect
         self.__rect = rect
@@ -219,14 +224,14 @@ def initialize_game():
     letter_buttons = []
     for letter in string.ascii_uppercase:
         letter_buttons.append(Letter_Button(0, 0, letter))
-    read_wordlist()
     fit_letter_buttons()
     init_ui_text(ui_object_list)
 
 def read_wordlist():
-    global list_of_answers
+    global list_of_answers, theme_list, difficulty_list, theme_index, difficulty_index
     list_of_answers = []
-    with open("wordlist.txt", "r") as openfile:
+    file_name = "theme" + theme_list[theme_index] + difficulty_list[difficulty_index] + "wordlist.txt"
+    with open(file_name, "r") as openfile:
         for line in openfile:
             word = line.rstrip()
             list_of_answers.append(word)
@@ -237,8 +242,27 @@ def get_new_word():
     return list_of_answers[random_int]
 
 def go_to_main_menu():
-    reset_game()
     game.set_state(STATE_MENU)
+
+def cycle_themes():
+    global theme_list, theme_index
+    theme_index += 1
+    if theme_index >= len(theme_list):
+        theme_index = 0
+    
+    text = f"Selected theme: {theme_list[theme_index]}"
+    ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON].set_text(text)
+    fit_ui_text()
+    
+def cycle_difficulty():
+    global difficulty_list, difficulty_index
+    difficulty_index += 1
+    if difficulty_index >= len(difficulty_list):
+        difficulty_index = 0
+    
+    text = f"Selected difficulty: {difficulty_list[difficulty_index]}"
+    ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON].set_text(text)
+    fit_ui_text()
 
 def new_round():
     reset_game()
@@ -247,6 +271,7 @@ def new_round():
 def reset_game():
     global answer, wrong_guess_amount, max_wrong_guesses
 
+    read_wordlist()
     answer = get_new_word()
 
     wrong_guess_amount = 0
@@ -260,8 +285,12 @@ def reset_ui_text():
     global wrong_guess_amount, max_wrong_guesses
 
     event_text = ""
-    event_text_object = ui_object_list[GAME_OBJECT][GUESSED_LETTERS_TEXT]
+    event_text_object = ui_object_list[GAME_OBJECT][EVENT_TEXT]
     event_text_object.set_text(event_text)
+    
+    guessed_text = ""
+    guessed_text_object = ui_object_list[GAME_OBJECT][GUESSED_LETTERS_TEXT]
+    guessed_text_object.set_text(guessed_text)
     
     guesses_left = ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT]
     increment = int((COLOR_MAX_VALUE - INITIAL_DANGER_COLOR[0]) / max_wrong_guesses)
@@ -279,12 +308,16 @@ def init_ui_text(ui_object_list):
     #Main menu ui text
     ui_object_list[MENU_OBJECT] = {}
 
-    # Menu items go from bottom to top as order
-    select_theme_text = f"Selected theme: {THEME_ALL}"
-    ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON] = Interactive_Text(select_theme_text, DARK_BLUE_COLOR, SELECT_THEME_FONT)
-    
+    # Menu items
     start_game_text = f"Start hangman!"
     ui_object_list[MENU_OBJECT][START_GAME_BUTTON] = Interactive_Text(start_game_text, DARK_GREEN_COLOR, START_GAME_FONT, start_game, True)
+    
+    select_difficulty_text = f"Selected difficulty: {difficulty_list[difficulty_index]}"
+    ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON] = Interactive_Text(select_difficulty_text, DARK_BLUE_COLOR, SELECT_DIFFICULTY_THEME_FONT, cycle_difficulty, True)
+
+    select_theme_text = f"Selected theme: {theme_list[theme_index]}"
+    ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON] = Interactive_Text(select_theme_text, DARK_BLUE_COLOR, SELECT_THEME_FONT, cycle_themes, True)
+    
     
 
     #Playing state ui text
@@ -359,21 +392,18 @@ def check_letter(letter_guessed, button):
     guessed_letters = guessed_letters_object.get_text()
     if letter_guessed in guessed_letters:
         event_text_object.set_text(f"You already guessed character '{letter_guessed}'", BLACK_COLOR)
-        place_event_text(event_text_object)
+        fit_ui_text()
         return
     
     new_solution = guessed_letters + letter_guessed
     guessed_letters_object.set_text(''.join(sorted(new_solution)))
-    place_guessed_letters_text(guessed_letters_object)
 
     if letter_guessed in answer.upper():
         event_text_object.set_text(f"Correct!", GREEN_COLOR)
-        place_event_text(event_text_object)
         button.change_color(GREEN_COLOR)
 
     elif letter_guessed not in answer.upper():
         event_text_object.set_text(f"Character '{letter_guessed}' not in word", RED_COLOR)
-        place_event_text(event_text_object)
         wrong_guess_amount += 1
 
         guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
@@ -389,7 +419,6 @@ def check_letter(letter_guessed, button):
 
     if(check_solution(answer)):
         event_text_object.set_text(f"You won!", BLACK_COLOR)
-        place_event_text(event_text_object)
         guesses_left = ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT]
         guesses_left.set_text("")
         game.set_state(STATE_GAME_WON)
@@ -397,24 +426,12 @@ def check_letter(letter_guessed, button):
 
     elif wrong_guess_amount == max_wrong_guesses:
         event_text_object.set_text(f"Too many wrong guesses!", BLACK_COLOR)
-        place_event_text(event_text_object)
         guesses_left = ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT]
         guesses_left.set_text("")
         game.set_state(STATE_SHOW_SOLUTION)
         solve_word(answer)
-
-def place_guessed_letters_text(guessed_letters_object):
-    guessed_letters = guessed_letters_object
-    guessed_text_rect = guessed_letters.get_rect()
-    guessed_text_rect.x = ((screen_size_x - guessed_letters.get_surface().get_rect()[2]) / 2)
-    guessed_text_rect.y = (((screen_size_y / 2) - guessed_letters.get_surface().get_rect()[3]) / 2)
-    guessed_letters.set_rect(guessed_text_rect)
-
-def place_event_text(event_text_object):
-    event_text_rect = event_text_object.get_rect()
-    event_text_rect.x = ((screen_size_x - event_text_object.get_surface().get_rect()[2]) / 2)
-    event_text_rect.y = (((screen_size_y / 2) - event_text_object.get_surface().get_rect()[3]) / 2) - 50
-    event_text_object.set_rect(event_text_rect)
+        
+    fit_ui_text()
 
 
 def fit_letter_buttons():
@@ -459,41 +476,58 @@ def fit_letter_buttons():
 def fit_ui_text():
     #Start menu ui text
     start_menu_layout_size_y = screen_size_y / 2
-    start_menu_layout_padding_y = (start_menu_layout_size_y / 2) + DEFAULT_FONT_SIZE
+    start_menu_layout_padding_y = screen_size_y / 5
 
     menu_button_amount = len(ui_object_list[MENU_OBJECT])
     menu_order = 0
     
     for item in ui_object_list[MENU_OBJECT]:
         object = ui_object_list[MENU_OBJECT][item]
-        object_rect = object.get_rect()
-        object_rect.x = ((screen_size_x - object.get_rect()[2]) / 2)
-        object_rect.y = screen_size_y - (((start_menu_layout_size_y / menu_button_amount) / 2 * (menu_order * 2 + 1)) + start_menu_layout_padding_y)
+        object_rect = object.get_surface().get_rect()
+        object_rect.x = screen_size_x / 2
+        object_rect.y = align_ui_info(start_menu_layout_size_y, start_menu_layout_padding_y, menu_button_amount, menu_order)
+        #object_rect.y = screen_size_y - (((start_menu_layout_size_y / menu_button_amount) / 2 * (menu_order * 2 + 1)) + start_menu_layout_padding_y)
         object.set_rect(object_rect)
+        object.set_rect_center((object_rect.x, object_rect.y))
         object.update_surface()
 
         menu_order += 1
 
+    #size of layout not taken by letter buttons order goes from bottom to top
+    game_info_layout_size_y = screen_size_y / 3
+    game_info_layout_padding_y = 15
+    game_info_amount = 3
+
+    info_order = 0
 
     #Playing state ui text
-    solution_text = ui_object_list[GAME_OBJECT][SOLUTION_TEXT]
-    solution_text_rect = solution_text.get_rect()
-    solution_text_rect.x = ((screen_size_x - solution_text.get_surface().get_rect()[2]) / 2)
-    solution_text_rect.y = (((screen_size_y / 2) - solution_text_rect[3]) / 2) + 50
-    solution_text.set_rect(solution_text_rect)
-    
     event_text = ui_object_list[GAME_OBJECT][EVENT_TEXT]
-    event_text_rect = event_text.get_rect()
-    event_text_rect.x = ((screen_size_x - event_text.get_surface().get_rect()[2]) / 2)
-    event_text_rect.y = (((screen_size_y / 2) - event_text.get_surface().get_rect()[3]) / 2) - 50
+    event_text.update_surface()
+    event_text_rect = event_text.get_surface().get_rect()
+    event_text_rect.x = screen_size_x / 2
+    event_text_rect.y = align_ui_info(game_info_layout_size_y, game_info_layout_padding_y, game_info_amount, info_order)
     event_text.set_rect(event_text_rect)
+    event_text.set_rect_center((event_text_rect.x, event_text_rect.y))
     
+    info_order += 1
     
     guessed_letters = ui_object_list[GAME_OBJECT][GUESSED_LETTERS_TEXT]
-    guessed_text_rect = guessed_letters.get_rect()
-    guessed_text_rect.x = ((screen_size_x - guessed_letters.get_surface().get_rect()[2]) / 2)
-    guessed_text_rect.y = (((screen_size_y / 2) - guessed_letters.get_surface().get_rect()[3]) / 2)
+    guessed_letters.update_surface()
+    guessed_text_rect = guessed_letters.get_surface().get_rect()
+    guessed_text_rect.x = screen_size_x / 2
+    guessed_text_rect.y = align_ui_info(game_info_layout_size_y, game_info_layout_padding_y, game_info_amount, info_order)
     guessed_letters.set_rect(guessed_text_rect)
+    guessed_letters.set_rect_center((guessed_text_rect.x, guessed_text_rect.y))
+
+    info_order += 1
+    
+    solution_text = ui_object_list[GAME_OBJECT][SOLUTION_TEXT]
+    solution_text.update_surface()
+    solution_text_rect = solution_text.get_surface().get_rect()
+    solution_text_rect.x = screen_size_x / 2
+    solution_text_rect.y = align_ui_info(game_info_layout_size_y, game_info_layout_padding_y, game_info_amount, info_order)
+    solution_text.set_rect(solution_text_rect)
+    solution_text.set_rect_center((solution_text_rect.x, solution_text_rect.y))
     
     guesses_left = ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT]
     guesses_left_text_rect = guesses_left.get_rect()
@@ -508,6 +542,9 @@ def fit_ui_text():
     continue_text_rect.x = 5
     continue_text_rect.y = 10
     continue_text.set_rect(continue_text_rect)
+
+def align_ui_info(layout_size_y, layout_padding_y, info_amount, info_order):
+    return (layout_size_y / info_amount) * (info_order + 1) + layout_padding_y
 
 
 pygame.init()
@@ -536,21 +573,41 @@ MENU_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
 GAME_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
 
 #Theme names
-THEME_ALL = "ALL"
-THEME_GAMING = "GAMING"
+THEME_ALL = "all"
+THEME_GAMING = "gaming"
+
+theme_index = 0
+
+theme_list = [THEME_ALL,
+              THEME_GAMING]
+
+#Difficulty names
+DIFF_EASY = "easy"
+DIFF_HARD = "hard"
+
+difficulty_index = 0
+
+difficulty_list = [DIFF_EASY,
+              DIFF_HARD]
 
 DEFAULT_BUTTON_FONT_SIZE = 50
 DEFAULT_FONT_SIZE = 50
 
 FONT_FILE_NAME = "YoungSerif-Regular.ttf"
 
+# In game fonts
 GUESS_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
 SOLUTION_FONT = pygame.font.Font(FONT_FILE_NAME, 40)
 EVENT_FONT = pygame.font.Font(FONT_FILE_NAME, 20)
 BUTTON_FONT = pygame.font.Font(FONT_FILE_NAME, DEFAULT_BUTTON_FONT_SIZE)
 GUESSES_LEFT_FONT = pygame.font.Font(FONT_FILE_NAME, 25)
-START_GAME_FONT = pygame.font.Font(FONT_FILE_NAME, 70)
+
+# Menu fonts
+START_GAME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
 SELECT_THEME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
+SELECT_DIFFICULTY_THEME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
+
+# Post game fonts
 CONTINUE_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
 
 screen = pygame.display.set_mode((INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT), pygame.DOUBLEBUF | pygame.RESIZABLE)
@@ -594,6 +651,7 @@ MENU_OBJECT = "MENU_OBJECT"
 
 START_GAME_BUTTON = "START_GAME_BUTTON"
 SELECT_THEME_BUTTON = "SELECT_THEME_BUTTON"
+SELECT_DIFFICULTY_BUTTON = "SELECT_DIFFICULTY_BUTTON"
 
 ui_object_list = {}
 
@@ -602,7 +660,6 @@ async def main():
     global screen_size_x, screen_size_y
 
     initialize_game()
-    reset_game()
 
     running =  True
 

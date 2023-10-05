@@ -1,0 +1,72 @@
+arcade
+joystick
+Pac-Man
+Donkey Kong
+Atari
+Space Invaders
+Pong
+pinball
+Tetris
+Mario
+platformer
+Role-Playing Game
+First-Person Shooter
+Multiplayer Online Battle Arena
+Real-Time Strategy
+sports game
+puzzle game
+racing game
+simulation
+adventure
+PlayStation
+Xbox
+Nintendo
+Steam
+mobile
+console
+handheld
+emulator
+respawn
+power-up
+easter egg
+cheat code
+Local Area Network
+Downloadable Content
+gamer tag
+multiplayer
+high score
+quest
+Lara Croft
+Master Chief
+Link
+Sonic the Hedgehog
+Samus Aran
+Kratos
+Mario Kart
+Final Fantasy
+Resident Evil
+Minecraft
+headset
+controller
+mousepad
+chair
+VR headset
+mouse
+keyboard
+monitor
+playtesting
+game jam
+polygon
+shaders
+esports
+tournament
+streamer
+Dota 2
+League of Legends
+Overwatch
+Twitch
+Fortnite
+caster
+victory
+defeat
+computer
