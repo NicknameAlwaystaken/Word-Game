@@ -25,23 +25,26 @@ class Game:
 
             for item in ui_object_list[GAME_OBJECT]:
                 object = ui_object_list[GAME_OBJECT][item]
-                object_rect = object.get_rect()
-                screen.blit(object.get_surface(), (object_rect.x, object_rect.y))
+                object.draw()
+                #object_rect = object.get_rect()
+                #screen.blit(object.get_surface(), (object_rect.x, object_rect.y))
             
             if self.state == STATE_SHOW_SOLUTION or self.state == STATE_GAME_WON:
                 for item in ui_object_list[GAME_END_OBJECT]:
                     object = ui_object_list[GAME_END_OBJECT][item]
-                    if not object.is_hidden():
-                        object_rect = object.get_rect()
-                        screen.blit(object.get_surface(), (object_rect.x, object_rect.y))
+                    object.draw()
+                    #if not object.is_hidden():
+                        #object_rect = object.get_rect()
+                        #screen.blit(object.get_surface(), (object_rect.x, object_rect.y))
 
         elif self.state == STATE_MENU:
             screen.fill(MENU_BACKGROUND_COLOR)
             for item in ui_object_list[MENU_OBJECT]:
                 object = ui_object_list[MENU_OBJECT][item]
-                if not object.is_hidden():
-                    object_rect = object.get_rect()
-                    screen.blit(object.get_surface(), (object_rect.x, object_rect.y))
+                object.draw()
+                #if not object.is_hidden():
+                    #object_rect = object.get_rect()
+                    #screen.blit(object.get_surface(), (object_rect.x, object_rect.y))
         else:
             screen.fill(WHITE_COLOR)
 
@@ -73,6 +76,10 @@ class Interactive_Text:
         self.__rect = rect
         self.__default_rect = rect
         self.__previous_rect = rect
+
+        self.__animation_step = 0
+        self.__is_animating = False
+        self.__animation = "NONE"
 
 
     def clicked(self):
@@ -153,6 +160,9 @@ class Interactive_Text:
         self.__previous_rect = self.__rect
         self.__rect.center = rect
         
+    def get_rect_center(self):
+        return self.__rect.center
+        
     def set_rect(self, rect):
         self.__previous_rect = self.__rect
         self.__rect = rect
@@ -172,10 +182,31 @@ class Interactive_Text:
 
     def is_hidden(self):
         return self.__hidden
+    
+    def set_animation(self, animation):
+        self.__animation = animation
+        self.__is_animating = True
+
+    def stop_animation(self):
+        self.__is_animating = False
+        
+    def get_animation_step(self):
+        return self.__animation_step
+    
+    def set_animation_step(self, step):
+        self.__animation_step = step
 
     def draw(self):
-        if not self.__hidden:
-            screen.blit(self.surface, (self.rect.x, self.rect.y))
+        if self.__is_animating:
+            if self.__animation == ANIMATION_RESET:
+                half_steps = int(ANIMATION_RESET_FRAMES / 2)
+                max_scale = ANIMATION_RESET_SCALE
+                scaling_up = True
+                scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_RESET_FRAMES)
+        else:
+            if not self.__hidden:
+                screen.blit(self.__surface, (self.__rect.x, self.__rect.y))
+                
     
     def custom_function(self):
         self.__custom_function()
@@ -194,8 +225,8 @@ class Letter_Button():
         self.correct_letter = None
         self.color = BLACK_COLOR
         self.__animation_step = 0
-        self.__animation_max_steps = 10
         self.__is_animating = False
+        self.__animation = "NONE"
 
     def change_color(self, color):
         self.__surface = self.__font.render(self.letter, True, color)
@@ -208,27 +239,22 @@ class Letter_Button():
     def draw(self):
         if self.is_clicked:
             self.__is_animating = True
+            self.__animation = ANIMATION_CLICKED
             if self.__animation_step == -1:
                 self.__animation_step = 0
 
         if self.__is_animating:
-            half_steps = int(self.__animation_max_steps / 2)
-            max_scale = 0.1
-            current_scale = max_scale / half_steps * self.__animation_step
+            if self.__animation == ANIMATION_CLICKED:
+                half_steps = int(ANIMATION_CLICKED_FRAMES / 2)
+                max_scale = ANIMATION_CLICKED_SCALE
+                scaling_up = False
+                scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_CLICKED_FRAMES)
 
-            if self.__animation_step >= half_steps and current_scale >= max_scale:
-                current_scale = max(max_scale - (current_scale - max_scale), 0)
-
-            new_surface = pygame.transform.scale_by(self.__surface, 1.0 - current_scale)
-            new_rect = new_surface.get_rect()
-            new_rect.center = (self.__x_center, self.__y_center)
-            screen.blit(new_surface, new_rect)
-
-            self.__animation_step += 1
-            if self.__animation_step > self.__animation_max_steps:
-                self.__animation_step = -1
-                self.__is_animating = False
-                
+            elif self.__animation == ANIMATION_RESET:
+                half_steps = int(ANIMATION_LETTER_BUTTON_RESET_FRAMES / 2)
+                max_scale = ANIMATION_LETTER_BUTTON_RESET_SCALE
+                scaling_up = True
+                scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_LETTER_BUTTON_RESET_FRAMES)
         else:
             screen.blit(self.__surface, self.__rect)
     
@@ -238,6 +264,13 @@ class Letter_Button():
     
     def not_clicked(self):
         self.is_clicked = False
+        
+    def set_animation(self, animation):
+        self.__animation = animation
+        self.__is_animating = True
+
+    def stop_animation(self):
+        self.__is_animating = False
 
     def set_rect(self, rect):
         self.__rect = rect
@@ -245,6 +278,9 @@ class Letter_Button():
     def set_rect_center(self, rect):
         self.__rect.center = rect
         self.__x_center, self.__y_center = rect
+        
+    def get_rect_center(self):
+        return self.__rect.center
     
     def reset_size(self):
         self.__surface = BUTTON_FONT.render(self.letter, True, self.color)
@@ -255,6 +291,32 @@ class Letter_Button():
     
     def get_surface(self):
         return self.__surface
+    
+    def get_animation_step(self):
+        return self.__animation_step
+    
+    def set_animation_step(self, step):
+        self.__animation_step = step
+
+
+def scale_animation(self, half_steps, max_scale, scaling_up, animation_frames):
+    current_step = self.get_animation_step()
+    current_scale = max_scale / half_steps * current_step
+
+    if current_step >= half_steps and current_scale >= max_scale:
+        current_scale = max(max_scale - (current_scale - max_scale), 0)
+    if not scaling_up:
+        new_surface = pygame.transform.scale_by(self.get_surface(), 1.0 - current_scale)
+    if scaling_up:
+        new_surface = pygame.transform.scale_by(self.get_surface(), 1.0 + current_scale)
+    new_rect = new_surface.get_rect()
+    new_rect.center = self.get_rect_center()
+    screen.blit(new_surface, new_rect)
+
+    self.set_animation_step(current_step + 1)
+    if current_step + 1 > animation_frames:
+        self.set_animation_step(-1)
+        self.stop_animation()
 
 def initialize_game():
     global letter_buttons, ui_object_list, object_list_index
@@ -399,6 +461,7 @@ def reset_buttons():
     for button in letter_buttons:
         button.change_color(BLACK_COLOR)
         button.change_alpha(COLOR_MAX_VALUE)
+        button.set_animation(ANIMATION_RESET)
 
 def game_won(answer):
     global guesses_left_text_surface
@@ -407,6 +470,7 @@ def game_won(answer):
     ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT].set_text(guesses_left_text)
 
     ui_object_list[GAME_OBJECT][SOLUTION_TEXT].set_text(answer, SOLVED_COLOR)
+    ui_object_list[GAME_OBJECT][SOLUTION_TEXT].set_animation(ANIMATION_RESET)
 
 def solve_word(answer):
     global guesses_left_text, guesses_left_text_surface
@@ -657,6 +721,24 @@ TEMP_COLOR_HOLDER = (174, 199, 245)
 MENU_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
 GAME_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
 
+
+# Animation names
+
+ANIMATION_CLICKED = "CLICKED"
+ANIMATION_RESET = "RESET"
+
+# Animation frames
+
+ANIMATION_CLICKED_FRAMES = 10
+ANIMATION_LETTER_BUTTON_RESET_FRAMES = 10
+ANIMATION_RESET_FRAMES = 30
+
+# Animation scaling
+
+ANIMATION_CLICKED_SCALE = 0.1
+ANIMATION_LETTER_BUTTON_RESET_SCALE = 0.1
+ANIMATION_RESET_SCALE = 0.2
+
 #Theme names
 THEME_ALL = "all"
 THEME_GAMING = "gaming"
@@ -703,6 +785,7 @@ CONTINUE_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
 screen = pygame.display.set_mode((INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT), pygame.DOUBLEBUF | pygame.RESIZABLE)
 screen_size_x, screen_size_y = screen.get_size()
 
+# Initializing game variables
 
 answer = ""
 letter_buttons = []
@@ -716,6 +799,7 @@ guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong gues
 
 clock = pygame.time.Clock()
 
+# Game states
 STATE_MENU = "MENU"
 STATE_PLAYING = "PLAYING"
 STATE_SHOW_SOLUTION = "SHOW_SOLUTION"
@@ -723,13 +807,13 @@ STATE_GAME_WON = "GAME_WON"
 
 game = Game()
 
-#end of game related objects
+# End of game related objects
 GAME_END_OBJECT = "GAME_END_OBJECT"
 
 CONTINUE_TEXT = "CONTINUE_TEXT"
 
 
-# game related objects
+# Game related objects
 GAME_OBJECT = "GAME_OBJECT"
 SOLUTION_TEXT = "SOLUTION_TEXT"
 EVENT_TEXT = "EVENT_TEXT"
@@ -738,7 +822,7 @@ GUESSES_LEFT_TEXT = "GUESSES_LEFT_TEXT"
 
 BACK_BUTTON = "BACK_BUTTON"
 
-# menu related objects
+# Menu related objects
 MENU_OBJECT = "MENU_OBJECT"
 
 START_GAME_BUTTON = "START_GAME_BUTTON"
@@ -746,6 +830,8 @@ SELECT_THEME_BUTTON = "SELECT_THEME_BUTTON"
 SELECT_DIFFICULTY_BUTTON = "SELECT_DIFFICULTY_BUTTON"
 
 ui_object_list = {}
+
+# Debug stuff
 
 debug_mode = False
 debug_text = ""
