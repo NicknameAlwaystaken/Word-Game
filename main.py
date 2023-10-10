@@ -7,6 +7,7 @@ import pygame
 import string
 import random
 import asyncio
+from pygame import gfxdraw
 
 
 class Game:
@@ -182,24 +183,54 @@ class Interactive_Text:
 class Letter_Button():
 
     def __init__(self, x, y, letter):
-        self.__surface = BUTTON_FONT.render(letter, True, BLACK_COLOR)
+        self.__font = BUTTON_FONT
+        self.__surface = self.__font.render(letter, True, BLACK_COLOR)
+        self.__x_center = x
+        self.__y_center = y
         self.__rect = self.__surface.get_rect()
-        self.__rect.center = (x,y)
+        self.__rect.center = (self.__x_center, self.__y_center)
         self.letter = letter
         self.is_clicked = False
         self.correct_letter = None
         self.color = BLACK_COLOR
+        self.__animation_step = 0
+        self.__animation_max_steps = 10
+        self.__is_animating = False
 
     def change_color(self, color):
-        self.__surface = BUTTON_FONT.render(self.letter, True, color)
+        self.__surface = self.__font.render(self.letter, True, color)
         self.color = color
-        if color == RED_COLOR: 
-            self.__surface.set_alpha(100)
-        else:
-            self.__surface.set_alpha(255)
+
+    def change_alpha(self, alpha):
+        self.__surface.set_alpha(alpha)
+
     
     def draw(self):
-        screen.blit(self.__surface, self.__rect)
+        if self.is_clicked:
+            self.__is_animating = True
+            if self.__animation_step == -1:
+                self.__animation_step = 0
+
+        if self.__is_animating:
+            half_steps = int(self.__animation_max_steps / 2)
+            max_scale = 0.1
+            current_scale = max_scale / half_steps * self.__animation_step
+
+            if self.__animation_step >= half_steps and current_scale >= max_scale:
+                current_scale = max(max_scale - (current_scale - max_scale), 0)
+
+            new_surface = pygame.transform.scale_by(self.__surface, 1.0 - current_scale)
+            new_rect = new_surface.get_rect()
+            new_rect.center = (self.__x_center, self.__y_center)
+            screen.blit(new_surface, new_rect)
+
+            self.__animation_step += 1
+            if self.__animation_step > self.__animation_max_steps:
+                self.__animation_step = -1
+                self.__is_animating = False
+                
+        else:
+            screen.blit(self.__surface, self.__rect)
     
     def clicked(self):
         self.is_clicked = True
@@ -212,8 +243,8 @@ class Letter_Button():
         self.__rect = rect
 
     def set_rect_center(self, rect):
-        self.__previous_rect = self.__rect
         self.__rect.center = rect
+        self.__x_center, self.__y_center = rect
     
     def reset_size(self):
         self.__surface = BUTTON_FONT.render(self.letter, True, self.color)
@@ -224,7 +255,6 @@ class Letter_Button():
     
     def get_surface(self):
         return self.__surface
-
 
 def initialize_game():
     global letter_buttons, ui_object_list, object_list_index
@@ -368,6 +398,7 @@ def reset_buttons():
     global letter_buttons
     for button in letter_buttons:
         button.change_color(BLACK_COLOR)
+        button.change_alpha(COLOR_MAX_VALUE)
 
 def game_won(answer):
     global guesses_left_text_surface
@@ -419,6 +450,7 @@ def check_letter(letter_guessed, button):
     if letter_guessed in answer.upper():
         event_text_object.set_text(f"Correct!", GREEN_COLOR)
         button.change_color(GREEN_COLOR)
+        button.change_alpha(COLOR_MAX_VALUE)
 
     elif letter_guessed not in answer.upper():
         event_text_object.set_text(f"Character '{letter_guessed}' not in word", RED_COLOR)
@@ -432,6 +464,7 @@ def check_letter(letter_guessed, button):
         guesses_left.set_text(guesses_left_text, new_color)
 
         button.change_color(RED_COLOR)
+        button.change_alpha(WRONG_LETTER_ALPHA)
     
     
 
@@ -612,6 +645,7 @@ BLACK_COLOR = (0, 0, 0)
 WHITE_COLOR = (255, 255, 255)
 
 COLOR_MAX_VALUE = 255
+WRONG_LETTER_ALPHA = 100
 
 INITIAL_DANGER_COLOR = (0, 0, 0)
 
@@ -755,6 +789,17 @@ async def main():
             
             if event.type == pygame.FINGERUP:
                 is_finger_lifted = True
+                for button in letter_buttons:
+                    button.not_clicked()
+
+            if event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1: # 1 = left click
+                        for button in letter_buttons:
+                            button.not_clicked()
+
+            if event.type == pygame.KEYUP:
+                    for button in letter_buttons:
+                        button.not_clicked()
 
             if(game.state == STATE_MENU): # Main menu
                 object_list_index = MENU_OBJECT
