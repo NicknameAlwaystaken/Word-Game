@@ -203,6 +203,12 @@ class Interactive_Text:
                 max_scale = ANIMATION_RESET_SCALE
                 scaling_up = True
                 scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_RESET_FRAMES)
+
+            if self.__animation == ANIMATION_SHAKE:
+                half_steps = int(ANIMATION_SHAKE_FRAMES / 2)
+                strength = ANIMATION_SHAKE_STRENGTH
+                style = ANIMATION_SHAKE_RANDOM
+                shake_animation(self, half_steps, strength, style, ANIMATION_SHAKE_FRAMES)
         else:
             if not self.__hidden:
                 screen.blit(self.__surface, (self.__rect.x, self.__rect.y))
@@ -298,6 +304,24 @@ class Letter_Button():
     def set_animation_step(self, step):
         self.__animation_step = step
 
+def shake_animation(self, half_steps, strength, style, animation_frames):
+    current_step = self.get_animation_step()
+    new_surface = self.get_surface()
+    
+    new_rect = new_surface.get_rect()
+    new_rect.center = self.get_rect_center()
+
+    rand_x = random.randrange(-strength, strength)
+    rand_y = random.randrange(-strength, strength)
+
+    new_rect.center = (new_rect.center[0] + rand_x, new_rect.center[1] + rand_y)
+
+    screen.blit(new_surface, new_rect)
+
+    self.set_animation_step(current_step + 1)
+    if current_step + 1 > animation_frames:
+        self.set_animation_step(-1)
+        self.stop_animation()
 
 def scale_animation(self, half_steps, max_scale, scaling_up, animation_frames):
     current_step = self.get_animation_step()
@@ -479,6 +503,7 @@ def solve_word(answer):
     ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT].set_text(guesses_left_text)
 
     ui_object_list[GAME_OBJECT][SOLUTION_TEXT].set_text(answer, UNSOLVED_COLOR)
+    ui_object_list[GAME_OBJECT][SOLUTION_TEXT].set_animation(ANIMATION_SHAKE)
 
 def check_solution(answer):
     solution = ""
@@ -526,6 +551,7 @@ def check_letter(letter_guessed, button):
         increment = int((COLOR_MAX_VALUE - INITIAL_DANGER_COLOR[0]) / max_wrong_guesses)
         new_color = ((INITIAL_DANGER_COLOR[0] + increment * wrong_guess_amount), INITIAL_DANGER_COLOR[1], INITIAL_DANGER_COLOR[2])
         guesses_left.set_text(guesses_left_text, new_color)
+        guesses_left.set_animation(ANIMATION_SHAKE)
 
         button.change_color(RED_COLOR)
         button.change_alpha(WRONG_LETTER_ALPHA)
@@ -697,8 +723,8 @@ def align_ui_info(layout_size_y, layout_padding_y, info_amount, info_order):
 
 pygame.init()
 
-INIT_SCREEN_WIDTH = 800
-INIT_SCREEN_HEIGHT = 600
+INIT_SCREEN_WIDTH = 1024
+INIT_SCREEN_HEIGHT = 768
 
 RED_COLOR = (200, 50, 25)
 GREEN_COLOR = (16, 200, 40)
@@ -726,18 +752,27 @@ GAME_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
 
 ANIMATION_CLICKED = "CLICKED"
 ANIMATION_RESET = "RESET"
+ANIMATION_SHAKE = "SHAKE"
 
 # Animation frames
 
 ANIMATION_CLICKED_FRAMES = 10
 ANIMATION_LETTER_BUTTON_RESET_FRAMES = 10
 ANIMATION_RESET_FRAMES = 30
+ANIMATION_SHAKE_FRAMES = 10
 
 # Animation scaling
 
 ANIMATION_CLICKED_SCALE = 0.1
 ANIMATION_LETTER_BUTTON_RESET_SCALE = 0.1
 ANIMATION_RESET_SCALE = 0.2
+
+# Animation shake
+
+ANIMATION_SHAKE_STRENGTH = 2
+ANIMATION_SHAKE_RANDOM = "RANDOM"
+
+
 
 #Theme names
 THEME_ALL = "all"
@@ -760,7 +795,7 @@ difficulty_list = [DIFF_EASY,
 DEFAULT_BUTTON_FONT_SIZE = 50
 DEFAULT_FONT_SIZE = 50
 
-FONT_FILE_NAME = "YoungSerif-Regular.ttf"
+FONT_FILE_NAME = "MartianMono-VariableFont_wdth,wght.ttf"
 
 #debug related
 DEBUG_FONT = pygame.font.Font(FONT_FILE_NAME, 10)
