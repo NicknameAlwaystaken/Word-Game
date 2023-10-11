@@ -792,7 +792,7 @@ difficulty_index = 0
 difficulty_list = [DIFF_EASY,
               DIFF_HARD]
 
-DEFAULT_BUTTON_FONT_SIZE = 50
+DEFAULT_BUTTON_FONT_SIZE = 60
 DEFAULT_FONT_SIZE = 50
 
 FONT_FILE_NAME = "MartianMono-VariableFont_wdth,wght.ttf"
