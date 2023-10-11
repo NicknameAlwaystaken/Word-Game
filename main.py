@@ -198,11 +198,17 @@ class Interactive_Text:
 
     def draw(self):
         if self.__is_animating:
-            if self.__animation == ANIMATION_RESET:
-                half_steps = int(ANIMATION_RESET_FRAMES / 2)
-                max_scale = ANIMATION_RESET_SCALE
+            if self.__animation == ANIMATION_POPOUT:
+                half_steps = int(ANIMATION_POPOUT_FRAMES / 2)
+                max_scale = ANIMATION_POPOUT_SCALE
                 scaling_up = True
-                scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_RESET_FRAMES)
+                scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_POPOUT_FRAMES)
+
+            if self.__animation == ANIMATION_SHORT_POPOUT:
+                half_steps = int(ANIMATION_SHORT_POPOUT_FRAMES / 2)
+                max_scale = ANIMATION_SHORT_POPOUT_SCALE
+                scaling_up = True
+                scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_SHORT_POPOUT_FRAMES)
 
             if self.__animation == ANIMATION_SHAKE:
                 half_steps = int(ANIMATION_SHAKE_FRAMES / 2)
@@ -256,7 +262,7 @@ class Letter_Button():
                 scaling_up = False
                 scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_CLICKED_FRAMES)
 
-            elif self.__animation == ANIMATION_RESET:
+            elif self.__animation == ANIMATION_LETTER_POPOUT:
                 half_steps = int(ANIMATION_LETTER_BUTTON_RESET_FRAMES / 2)
                 max_scale = ANIMATION_LETTER_BUTTON_RESET_SCALE
                 scaling_up = True
@@ -425,6 +431,9 @@ def reset_ui_text():
     guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
     guesses_left.set_text(guesses_left_text, new_color)
 
+    solution_text = ui_object_list[GAME_OBJECT][SOLUTION_TEXT]
+    solution_text.set_animation(ANIMATION_SHORT_POPOUT)
+
 def start_game():
     reset_game()
     game.set_state(STATE_PLAYING)
@@ -485,7 +494,6 @@ def reset_buttons():
     for button in letter_buttons:
         button.change_color(BLACK_COLOR)
         button.change_alpha(COLOR_MAX_VALUE)
-        button.set_animation(ANIMATION_RESET)
 
 def game_won(answer):
     global guesses_left_text_surface
@@ -494,7 +502,7 @@ def game_won(answer):
     ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT].set_text(guesses_left_text)
 
     ui_object_list[GAME_OBJECT][SOLUTION_TEXT].set_text(answer, SOLVED_COLOR)
-    ui_object_list[GAME_OBJECT][SOLUTION_TEXT].set_animation(ANIMATION_RESET)
+    ui_object_list[GAME_OBJECT][SOLUTION_TEXT].set_animation(ANIMATION_POPOUT)
 
 def solve_word(answer):
     global guesses_left_text, guesses_left_text_surface
@@ -751,21 +759,25 @@ GAME_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
 # Animation names
 
 ANIMATION_CLICKED = "CLICKED"
-ANIMATION_RESET = "RESET"
+ANIMATION_POPOUT = "POPOUT"
+ANIMATION_SHORT_POPOUT = "SHORT_POPOUT"
+ANIMATION_LETTER_POPOUT = "LETTER_POPOUT"
 ANIMATION_SHAKE = "SHAKE"
 
 # Animation frames
 
 ANIMATION_CLICKED_FRAMES = 10
 ANIMATION_LETTER_BUTTON_RESET_FRAMES = 10
-ANIMATION_RESET_FRAMES = 30
+ANIMATION_POPOUT_FRAMES = 30
+ANIMATION_SHORT_POPOUT_FRAMES = 10
 ANIMATION_SHAKE_FRAMES = 10
 
 # Animation scaling
 
 ANIMATION_CLICKED_SCALE = 0.1
 ANIMATION_LETTER_BUTTON_RESET_SCALE = 0.1
-ANIMATION_RESET_SCALE = 0.2
+ANIMATION_POPOUT_SCALE = 0.2
+ANIMATION_SHORT_POPOUT_SCALE = 0.1
 
 # Animation shake
 
