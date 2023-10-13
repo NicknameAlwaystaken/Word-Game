@@ -48,6 +48,36 @@ class Game:
         else:
             screen.fill(WHITE_COLOR)
 
+class Button:
+    def __init__(self, surface, custom_function = None, clickable: bool = False) -> None:
+
+        self.__surface = pygame.Surface.copy(surface)
+        self.__rect = self.__surface.get_rect()
+        self.__clickable = clickable
+        self.__custom_function = custom_function
+
+    def get_rect(self):
+        return self.__rect
+    
+    def set_rect(self, rect):
+        self.__rect = rect
+    
+    def get_surface(self):
+        return self.__surface
+    
+    def is_clickable(self):
+        return self.__clickable
+    
+    def custom_function(self):
+        self.__custom_function()
+        
+    def clicked(self):
+        if self.__clickable and self.__custom_function != None:
+            self.__custom_function()
+    
+    def draw(self):
+        screen.blit(self.__surface, self.__rect)
+
 class Interactive_Text:
     def __init__(self, text: string, color: pygame.color.Color, font: pygame.font.Font, custom_function = None, clickable: bool = False):
 
@@ -227,7 +257,8 @@ class Letter_Button():
 
     def __init__(self, x, y, letter):
         self.__font = BUTTON_FONT
-        self.__surface = self.__font.render(letter, True, BLACK_COLOR)
+        self.__original_image = letter_button_fitted_image
+        self.__surface = pygame.Surface.copy(self.__original_image)
         self.__x_center = x
         self.__y_center = y
         self.__rect = self.__surface.get_rect()
@@ -235,20 +266,27 @@ class Letter_Button():
         self.letter = letter
         self.is_clicked = False
         self.correct_letter = None
-        self.color = BLACK_COLOR
+        self.__color = BLACK_COLOR
         self.__animation_step = 0
         self.__is_animating = False
         self.__animation = "NONE"
 
     def change_color(self, color):
-        self.__surface = self.__font.render(self.letter, True, color)
-        self.color = color
+        self.__color = color
 
     def change_alpha(self, alpha):
-        self.__surface.set_alpha(alpha)
+        self.__alpha = alpha
 
     
     def draw(self):
+        self.__surface = pygame.Surface.copy(self.__original_image)
+        self.__rect = self.__surface.get_rect()
+        self.__rect.center = (self.__x_center, self.__y_center)
+        font_surface = self.__font.render(self.letter, True, self.__color)
+        font_size = font_surface.get_size()
+        self.__surface.blit(font_surface, (15, 0)) # fix math here
+        self.__surface.set_alpha(self.__alpha)
+
         if self.is_clicked:
             self.__is_animating = True
             self.__animation = ANIMATION_CLICKED
@@ -295,7 +333,6 @@ class Letter_Button():
         return self.__rect.center
     
     def reset_size(self):
-        self.__surface = BUTTON_FONT.render(self.letter, True, self.color)
         self.__rect = self.__surface.get_rect()
 
     def get_rect(self):
@@ -333,12 +370,14 @@ def scale_animation(self, half_steps, max_scale, scaling_up, animation_frames):
     current_step = self.get_animation_step()
     current_scale = max_scale / half_steps * current_step
 
+    surface = self.get_surface()
+
     if current_step >= half_steps and current_scale >= max_scale:
         current_scale = max(max_scale - (current_scale - max_scale), 0)
     if not scaling_up:
-        new_surface = pygame.transform.scale_by(self.get_surface(), 1.0 - current_scale)
+        new_surface = pygame.transform.scale_by(surface, 1.0 - current_scale)
     if scaling_up:
-        new_surface = pygame.transform.scale_by(self.get_surface(), 1.0 + current_scale)
+        new_surface = pygame.transform.scale_by(surface, 1.0 + current_scale)
     new_rect = new_surface.get_rect()
     new_rect.center = self.get_rect_center()
     screen.blit(new_surface, new_rect)
@@ -470,8 +509,7 @@ def init_ui_text(ui_object_list):
     
     # Other items
 
-    back_button_text = f"BACK"
-    ui_object_list[GAME_OBJECT][BACK_BUTTON] = Interactive_Text(back_button_text, BLACK_COLOR, BACK_BUTTON_FONT, go_to_main_menu, True)
+    ui_object_list[GAME_OBJECT][BACK_BUTTON] = Button(back_button_fitted_image, go_to_main_menu, True)
 
     guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
     new_color = (((COLOR_MAX_VALUE - INITIAL_DANGER_COLOR[0] / max_wrong_guesses) * wrong_guess_amount), INITIAL_DANGER_COLOR[1], INITIAL_DANGER_COLOR[2])
@@ -480,8 +518,7 @@ def init_ui_text(ui_object_list):
     #Post game ui items
     ui_object_list[GAME_END_OBJECT] = {}
     
-    back_button_text = f"BACK"
-    ui_object_list[GAME_END_OBJECT][BACK_BUTTON] = Interactive_Text(back_button_text, BLACK_COLOR, BACK_BUTTON_FONT, go_to_main_menu, True) # back button is twice, easier to do it this way, may need changing later.
+    ui_object_list[GAME_END_OBJECT][BACK_BUTTON] = ui_object_list[GAME_OBJECT][BACK_BUTTON] # Currently adding back button to two lists for use between 2 game states
 
     continue_text = f"Click here to continue!"
     ui_object_list[GAME_END_OBJECT][CONTINUE_TEXT] = Interactive_Text(continue_text, DARK_BLUE_COLOR, CONTINUE_FONT, new_round, True)
@@ -707,14 +744,6 @@ def fit_ui_text():
     guesses_left_text_rect.topleft = (5, 10)
     guesses_left.set_rect(guesses_left_text_rect)
 
-
-    #Post game ui text
-
-    back_button = ui_object_list[GAME_END_OBJECT][BACK_BUTTON] #Twice for GAME_END_OBJECT, probably needs changing later. Was easy solution
-    back_button_rect = back_button.get_surface().get_rect()
-    back_button_rect.topright = (screen_size_x - 30, 15)
-    back_button.set_rect(back_button_rect)
-
     continue_text = ui_object_list[GAME_END_OBJECT][CONTINUE_TEXT]
     continue_text_rect = continue_text.get_rect()
     continue_text_rect.x = 5
@@ -735,7 +764,7 @@ INIT_SCREEN_WIDTH = 1024
 INIT_SCREEN_HEIGHT = 768
 
 RED_COLOR = (200, 50, 25)
-GREEN_COLOR = (16, 200, 40)
+GREEN_COLOR = (16, 140, 40)
 DARK_GREEN_COLOR = (8, 130, 20)
 DARK_BLUE_COLOR = (50, 50, 150)
 LIGHT_BLUE_COLOR = (138, 160, 242)
@@ -875,6 +904,14 @@ MENU_OBJECT = "MENU_OBJECT"
 START_GAME_BUTTON = "START_GAME_BUTTON"
 SELECT_THEME_BUTTON = "SELECT_THEME_BUTTON"
 SELECT_DIFFICULTY_BUTTON = "SELECT_DIFFICULTY_BUTTON"
+
+# Images
+
+letter_button_loaded_image = pygame.image.load("letter_button_background.png")
+letter_button_fitted_image = pygame.transform.smoothscale(letter_button_loaded_image, (75, 75))
+
+back_button_loaded_image = pygame.image.load("back_button.png")
+back_button_fitted_image = back_button_loaded_image #pygame.transform.smoothscale(back_button_loaded_image, (75, 75))
 
 ui_object_list = {}
 
