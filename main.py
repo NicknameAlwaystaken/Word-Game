@@ -520,8 +520,7 @@ def init_ui_text(ui_object_list):
     
     ui_object_list[GAME_END_OBJECT][BACK_BUTTON] = ui_object_list[GAME_OBJECT][BACK_BUTTON] # Currently adding back button to two lists for use between 2 game states
 
-    continue_text = f"Click here to continue!"
-    ui_object_list[GAME_END_OBJECT][CONTINUE_TEXT] = Interactive_Text(continue_text, DARK_BLUE_COLOR, CONTINUE_FONT, new_round, True)
+    ui_object_list[GAME_END_OBJECT][CONTINUE_TEXT] = Button(continue_button_loaded_image, new_round, True)
 
     fit_ui_text()
 
@@ -746,8 +745,8 @@ def fit_ui_text():
 
     continue_text = ui_object_list[GAME_END_OBJECT][CONTINUE_TEXT]
     continue_text_rect = continue_text.get_rect()
-    continue_text_rect.x = 5
-    continue_text_rect.y = 10
+    continue_text_rect.x = 30
+    continue_text_rect.y = 15
     continue_text.set_rect(continue_text_rect)
 
     #debug text
@@ -912,6 +911,9 @@ letter_button_fitted_image = pygame.transform.smoothscale(letter_button_loaded_i
 
 back_button_loaded_image = pygame.image.load("back_button.png")
 back_button_fitted_image = back_button_loaded_image #pygame.transform.smoothscale(back_button_loaded_image, (75, 75))
+
+continue_button_loaded_image = pygame.image.load("continue_button.png")
+continue_button_fitted_image = continue_button_loaded_image #pygame.transform.smoothscale(continue_button_loaded_image, (75, 75))
 
 ui_object_list = {}
 
