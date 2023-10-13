@@ -4,12 +4,12 @@ Playable at https://nicknamealwaystaken.itch.io/hangman
 I hope you enjoy :)
 
 
-# TODO
+## TODO
 
-## Gameplay and visual improvements
+### Gameplay and visual improvements
 Game name/Logo show in-game
 Interactable text/buttons look more like buttons
 Easier continue, press any key or click anywhere
 
-## Functionality
+### Functionality
 Local score/save files
