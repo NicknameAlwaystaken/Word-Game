@@ -55,9 +55,18 @@ class Button:
         self.__rect = self.__surface.get_rect()
         self.__clickable = clickable
         self.__custom_function = custom_function
+        self.__is_selected = False
+        self.__selectable = True
+
+        self.__animation_step = 0
+        self.__is_animating = False
+        self.__animation = "NONE"
 
     def get_rect(self):
         return self.__rect
+    
+    def get_rect_center(self):
+        return self.__rect.center
     
     def set_rect(self, rect):
         self.__rect = rect
@@ -76,7 +85,31 @@ class Button:
             self.__custom_function()
     
     def draw(self):
-        screen.blit(self.__surface, self.__rect)
+        if self.__is_animating:
+            if self.__animation == ANIMATION_SELECTED:
+                selected_animation(self, ANIMATION_SELECTED_SCALE, ANIMATION_SELECTED_FRAMES, self.__is_selected)
+
+        else:
+            screen.blit(self.__surface, self.__rect)
+        
+    def set_animation(self, animation):
+        self.__animation = animation
+        self.__is_animating = True
+        
+    def set_animation_step(self, step):
+        self.__animation_step = step
+        
+    def get_animation_step(self):
+        return self.__animation_step
+        
+    def stop_animation(self):
+        self.__is_animating = False
+
+    def select(self, selected):
+        if self.__selectable:
+            self.__is_selected = selected
+            if selected:
+                self.set_animation(ANIMATION_SELECTED)
 
 class Interactive_Text:
     def __init__(self, text: string, color: pygame.color.Color, font: pygame.font.Font, custom_function = None, clickable: bool = False):
@@ -110,6 +143,9 @@ class Interactive_Text:
         self.__animation_step = 0
         self.__is_animating = False
         self.__animation = "NONE"
+        
+        self.__is_selected = False
+        self.__selectable = False
 
 
     def clicked(self):
@@ -229,22 +265,20 @@ class Interactive_Text:
     def draw(self):
         if self.__is_animating:
             if self.__animation == ANIMATION_POPOUT:
-                half_steps = int(ANIMATION_POPOUT_FRAMES / 2)
-                max_scale = ANIMATION_POPOUT_SCALE
                 scaling_up = True
-                scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_POPOUT_FRAMES)
+                scale_animation(self, ANIMATION_POPOUT_SCALE, ANIMATION_POPOUT_FRAMES, scaling_up)
 
             if self.__animation == ANIMATION_SHORT_POPOUT:
-                half_steps = int(ANIMATION_SHORT_POPOUT_FRAMES / 2)
-                max_scale = ANIMATION_SHORT_POPOUT_SCALE
                 scaling_up = True
-                scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_SHORT_POPOUT_FRAMES)
+                scale_animation(self, ANIMATION_SHORT_POPOUT_SCALE, ANIMATION_SHORT_POPOUT_FRAMES, scaling_up)
 
             if self.__animation == ANIMATION_SHAKE:
-                half_steps = int(ANIMATION_SHAKE_FRAMES / 2)
-                strength = ANIMATION_SHAKE_STRENGTH
                 style = ANIMATION_SHAKE_RANDOM
-                shake_animation(self, half_steps, strength, style, ANIMATION_SHAKE_FRAMES)
+                shake_animation(self, ANIMATION_SHAKE_STRENGTH, ANIMATION_SHAKE_FRAMES, style)
+                
+            if self.__animation == ANIMATION_SELECTED:
+                selected_animation(self, ANIMATION_SELECTED_SCALE, ANIMATION_SELECTED_FRAMES, self.__is_selected)
+
         else:
             if not self.__hidden:
                 screen.blit(self.__surface, (self.__rect.x, self.__rect.y))
@@ -252,6 +286,12 @@ class Interactive_Text:
     
     def custom_function(self):
         self.__custom_function()
+        
+    def select(self, selected):
+        if self.__selectable:
+            self.__is_selected = selected
+            if selected:
+                self.set_animation(ANIMATION_SELECTED)
 
 class Letter_Button():
 
@@ -267,6 +307,10 @@ class Letter_Button():
         self.is_clicked = False
         self.correct_letter = None
         self.__color = BLACK_COLOR
+
+        self.__selectable = True
+        self.__is_selected = False
+
         self.__animation_step = 0
         self.__is_animating = False
         self.__animation = "NONE"
@@ -283,7 +327,6 @@ class Letter_Button():
         self.__rect = self.__surface.get_rect()
         self.__rect.center = (self.__x_center, self.__y_center)
         font_surface = self.__font.render(self.letter, True, self.__color)
-        font_size = font_surface.get_size()
         self.__surface.blit(font_surface, (15, 0)) # fix math here
         self.__surface.set_alpha(self.__alpha)
 
@@ -295,16 +338,15 @@ class Letter_Button():
 
         if self.__is_animating:
             if self.__animation == ANIMATION_CLICKED:
-                half_steps = int(ANIMATION_CLICKED_FRAMES / 2)
-                max_scale = ANIMATION_CLICKED_SCALE
                 scaling_up = False
-                scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_CLICKED_FRAMES)
+                scale_animation(self, ANIMATION_CLICKED_SCALE, ANIMATION_CLICKED_FRAMES, scaling_up)
 
             elif self.__animation == ANIMATION_LETTER_POPOUT:
-                half_steps = int(ANIMATION_LETTER_BUTTON_RESET_FRAMES / 2)
-                max_scale = ANIMATION_LETTER_BUTTON_RESET_SCALE
                 scaling_up = True
-                scale_animation(self, half_steps, max_scale, scaling_up, ANIMATION_LETTER_BUTTON_RESET_FRAMES)
+                scale_animation(self, ANIMATION_LETTER_BUTTON_RESET_SCALE, ANIMATION_LETTER_BUTTON_RESET_FRAMES, scaling_up)
+
+            elif self.__animation == ANIMATION_SELECTED:
+                selected_animation(self, ANIMATION_SELECTED_SCALE, ANIMATION_SELECTED_FRAMES, self.__is_selected)
         else:
             screen.blit(self.__surface, self.__rect)
     
@@ -316,8 +358,9 @@ class Letter_Button():
         self.is_clicked = False
         
     def set_animation(self, animation):
-        self.__animation = animation
-        self.__is_animating = True
+        if animation == ANIMATION_SELECTED and not self.__is_animating or animation is not ANIMATION_SELECTED: # I don't want hover animation change ongoing animation
+            self.__animation = animation
+            self.__is_animating = True
 
     def stop_animation(self):
         self.__is_animating = False
@@ -347,7 +390,13 @@ class Letter_Button():
     def set_animation_step(self, step):
         self.__animation_step = step
 
-def shake_animation(self, half_steps, strength, style, animation_frames):
+    def select(self, selected):
+        if self.__selectable:
+            self.__is_selected = selected
+            if selected:
+                self.set_animation(ANIMATION_SELECTED)
+
+def shake_animation(self, strength, animation_frames, style):
     current_step = self.get_animation_step()
     new_surface = self.get_surface()
     
@@ -366,8 +415,10 @@ def shake_animation(self, half_steps, strength, style, animation_frames):
         self.set_animation_step(-1)
         self.stop_animation()
 
-def scale_animation(self, half_steps, max_scale, scaling_up, animation_frames):
+def scale_animation(self, max_scale, animation_frames, scaling_up):
     current_step = self.get_animation_step()
+    half_steps = int(animation_frames / 2)
+
     current_scale = max_scale / half_steps * current_step
 
     surface = self.get_surface()
@@ -375,9 +426,9 @@ def scale_animation(self, half_steps, max_scale, scaling_up, animation_frames):
     if current_step >= half_steps and current_scale >= max_scale:
         current_scale = max(max_scale - (current_scale - max_scale), 0)
     if not scaling_up:
-        new_surface = pygame.transform.scale_by(surface, 1.0 - current_scale)
+        new_surface = pygame.transform.smoothscale_by(surface, 1.0 - current_scale)
     if scaling_up:
-        new_surface = pygame.transform.scale_by(surface, 1.0 + current_scale)
+        new_surface = pygame.transform.smoothscale_by(surface, 1.0 + current_scale)
     new_rect = new_surface.get_rect()
     new_rect.center = self.get_rect_center()
     screen.blit(new_surface, new_rect)
@@ -385,6 +436,27 @@ def scale_animation(self, half_steps, max_scale, scaling_up, animation_frames):
     self.set_animation_step(current_step + 1)
     if current_step + 1 > animation_frames:
         self.set_animation_step(-1)
+        self.stop_animation()
+        
+def selected_animation(self, max_scale, animation_frames, selected):
+    current_step = self.get_animation_step()
+    
+    current_scale = max_scale / animation_frames * current_step
+
+    surface = self.get_surface()
+
+    new_surface = pygame.transform.smoothscale_by(surface, 1.0 + current_scale)
+
+    new_rect = new_surface.get_rect()
+    new_rect.center = self.get_rect_center()
+    screen.blit(new_surface, new_rect)
+    
+    if selected and current_step + 1 <= animation_frames:
+        self.set_animation_step(current_step + 1)
+    elif not selected and current_step - 1 > -1:
+        self.set_animation_step(current_step - 1)
+
+    if not selected and current_step - 1 <= 0:
         self.stop_animation()
 
 def initialize_game():
@@ -791,6 +863,7 @@ ANIMATION_POPOUT = "POPOUT"
 ANIMATION_SHORT_POPOUT = "SHORT_POPOUT"
 ANIMATION_LETTER_POPOUT = "LETTER_POPOUT"
 ANIMATION_SHAKE = "SHAKE"
+ANIMATION_SELECTED = "HOVER"
 
 # Animation frames
 
@@ -799,6 +872,7 @@ ANIMATION_LETTER_BUTTON_RESET_FRAMES = 10
 ANIMATION_POPOUT_FRAMES = 30
 ANIMATION_SHORT_POPOUT_FRAMES = 10
 ANIMATION_SHAKE_FRAMES = 10
+ANIMATION_SELECTED_FRAMES = 10
 
 # Animation scaling
 
@@ -806,6 +880,7 @@ ANIMATION_CLICKED_SCALE = 0.1
 ANIMATION_LETTER_BUTTON_RESET_SCALE = 0.1
 ANIMATION_POPOUT_SCALE = 0.2
 ANIMATION_SHORT_POPOUT_SCALE = 0.1
+ANIMATION_SELECTED_SCALE = 0.1
 
 # Animation shake
 
@@ -947,6 +1022,7 @@ async def main():
     while running:
         events = pygame.event.get()
         for event in events:
+            mouse_pos = pygame.mouse.get_pos()
             if event.type == DEBUG_TIMER:
                 debug_timer_text += 1
                 debug_timer_text_surface = DEBUG_FONT.render(str(debug_timer_text), True, BLACK_COLOR)
@@ -964,6 +1040,7 @@ async def main():
                 for button in letter_buttons:
                     button.not_clicked()
 
+
             if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1: # 1 = left click
                         for button in letter_buttons:
@@ -973,8 +1050,25 @@ async def main():
                     for button in letter_buttons:
                         button.not_clicked()
 
-            if(game.state == STATE_MENU): # Main menu
+            # Main menu
+            if(game.state == STATE_MENU): 
                 object_list_index = MENU_OBJECT
+                
+                # Hover over
+                object_list = ui_object_list[object_list_index]
+                for item in object_list:
+                    object = object_list[item]
+                    if object.get_rect().collidepoint(mouse_pos):
+                        object.select(True)
+                    else:
+                        object.select(False)
+                        
+                for button in letter_buttons:
+                    if button.get_rect().collidepoint(mouse_pos):
+                        button.select(True)
+                    else:
+                        button.select(False)
+
                 #Keyboard events
                 if(event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_RETURN:
@@ -993,9 +1087,26 @@ async def main():
                     finger_tap_event(event, object_list_index)
                     is_finger_lifted = False
                     break
-
-            elif(game.state == STATE_PLAYING): # playing state
+            
+            # playing state
+            elif(game.state == STATE_PLAYING): 
                 object_list_index = GAME_OBJECT
+                
+                # Hover over
+                object_list = ui_object_list[object_list_index]
+                for item in object_list:
+                    object = object_list[item]
+                    if object.get_rect().collidepoint(mouse_pos):
+                        object.select(True)
+                    else:
+                        object.select(False)
+                        
+                for button in letter_buttons:
+                    if button.get_rect().collidepoint(mouse_pos):
+                        button.select(True)
+                    else:
+                        button.select(False)
+                
                 #Keyboard events
                 if(event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_ESCAPE:
@@ -1014,7 +1125,6 @@ async def main():
                 #Mouse events
                 elif(event.type == pygame.MOUSEBUTTONDOWN):
                     if event.button == 1: # 1 = left click
-                        mouse_pos = pygame.mouse.get_pos()
                         for button in letter_buttons:
                             button_rect = button.get_rect()
                             if button_rect.collidepoint(mouse_pos):
@@ -1035,8 +1145,19 @@ async def main():
                     is_finger_lifted = False
                     break
 
-            elif(game.state == STATE_SHOW_SOLUTION or game.state == STATE_GAME_WON): #Game/round ended
+            #Game/round ended
+            elif(game.state == STATE_SHOW_SOLUTION or game.state == STATE_GAME_WON): 
                 object_list_index = GAME_END_OBJECT
+                
+                # Hover over
+                object_list = ui_object_list[object_list_index]
+                for item in object_list:
+                    object = object_list[item]
+                    if object.get_rect().collidepoint(mouse_pos):
+                        object.select(True)
+                    else:
+                        object.select(False)
+
                 #Keyboard events
                 if(event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_RETURN:
