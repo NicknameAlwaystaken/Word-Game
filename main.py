@@ -353,6 +353,7 @@ class Letter_Button():
     def clicked(self):
         self.is_clicked = True
         check_letter(self.letter, self)
+        self.__selectable = False
     
     def not_clicked(self):
         self.is_clicked = False
@@ -395,6 +396,9 @@ class Letter_Button():
             self.__is_selected = selected
             if selected:
                 self.set_animation(ANIMATION_SELECTED)
+
+    def set_selectable(self, selectable):
+        self.__selectable = selectable
 
 def shake_animation(self, strength, animation_frames, style):
     current_step = self.get_animation_step()
@@ -602,6 +606,7 @@ def reset_buttons():
     for button in letter_buttons:
         button.change_color(BLACK_COLOR)
         button.change_alpha(COLOR_MAX_VALUE)
+        button.set_selectable(True)
 
 def game_won(answer):
     global guesses_left_text_surface
