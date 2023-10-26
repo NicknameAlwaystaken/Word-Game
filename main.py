@@ -1314,13 +1314,13 @@ if __name__ == '__main__':
 
     # Game sounds
 
-    start_game_sound = pygame.mixer.Sound("start_game_sound.mp3")
-    correct_sound = pygame.mixer.Sound("correct_sound.mp3")
-    failed_word_sound = pygame.mixer.Sound("failed_word_sound.mp3")
-    correct_word_sound = pygame.mixer.Sound("correct_word_sound.mp3")
-    wrong_sound = pygame.mixer.Sound("wrong_sound.mp3")
-    back_sound = pygame.mixer.Sound("back_sound.mp3")
-    change_setting_sound = pygame.mixer.Sound("change_setting_sound.mp3")
+    start_game_sound = pygame.mixer.Sound("start_game_sound.ogg")
+    correct_sound = pygame.mixer.Sound("correct_sound.ogg")
+    failed_word_sound = pygame.mixer.Sound("failed_word_sound.ogg")
+    correct_word_sound = pygame.mixer.Sound("correct_word_sound.ogg")
+    wrong_sound = pygame.mixer.Sound("wrong_sound.ogg")
+    back_sound = pygame.mixer.Sound("back_sound.ogg")
+    change_setting_sound = pygame.mixer.Sound("change_setting_sound.ogg")
 
     game = Game()
 
