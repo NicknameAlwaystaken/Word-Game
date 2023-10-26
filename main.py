@@ -14,11 +14,13 @@ import numpy as np
 class Game:
     def __init__(self):
         self.__state = STATE_MENU
+        self.__previous_state = None
         self.__background_color = MENU_BACKGROUND_COLOR
         self.__background_shapes = Background_Shapes_List()
-        self.create_background_shapes(SHAPE_STAR_AMOUNT)
+        preload_list.append(lambda:self.create_background_shapes(SHAPE_STAR_AMOUNT))
     
     def create_background_shapes(self, amount):
+        print("Generating stars")
         for i in range(amount):
             rand_x_position = random.randrange(0, screen_size_x)
             rand_y_position = random.randrange(0, screen_size_y)
@@ -29,31 +31,6 @@ class Game:
             color = (rand_r, rand_g, rand_b)
 
             background_star = Background_Shape(screen, SHAPE_STAR_NAME, rand_x_position ,rand_y_position, color)
-
-            """
-
-            rand_direction_x = random.uniform(0.2, 0.8) * 1 if random.random() < 0.5 else -1
-            rand_direction_y = random.uniform(0.2, 0.8) * 1 if random.random() < 0.5 else -1
-
-            min_speed = 1.0
-            max_speed = 2.5
-
-            speed = random.uniform(min_speed, max_speed)
-            
-            #define array with some values
-            my_arr = np.array([rand_direction_x, rand_direction_y])
-
-            # Find the minimum and maximum values in the array
-            my_min_val = np.min(my_arr)
-            my_max_val = np.max(my_arr)
-
-            # Perform min-max normalization
-            my_normalized_arr = (my_arr - my_min_val) / (my_max_val - my_min_val)
-            print(f"my_normalized_arr {my_normalized_arr} my_arr {my_arr} my_min_val {my_min_val} my_max_val {my_max_val}")
-
-            rand_x_speed = my_normalized_arr[0] * speed
-            rand_y_speed = my_normalized_arr[1] * speed
-            """
 
             min_speed = 0.5
             max_speed = 2.0
@@ -69,7 +46,14 @@ class Game:
 
 
     def set_state(self, state):
-        self.__state = state
+        if state == STATE_RESUME:
+            self.__state = self.__previous_state
+        elif state == STATE_FROZEN:
+            self.__previous_state = self.__state
+            self.__state = state
+        else:
+            self.__state = state
+
         if self.__state == STATE_PLAYING or self.__state == STATE_SHOW_SOLUTION or self.__state == STATE_GAME_WON:
             self.__background_color = GAME_BACKGROUND_COLOR
         elif self.__state == STATE_MENU:
@@ -80,13 +64,15 @@ class Game:
     def get_state(self):
         return self.__state
 
-    def background(self):
+    def __background(self):
         screen.fill(self.__background_color)
         self.__background_shapes.update()
 
     
     def update(self):
-        self.background()
+        if self.__state == STATE_FROZEN:
+            return
+        self.__background()
         if self.__state == STATE_PLAYING or self.__state == STATE_SHOW_SOLUTION or self.__state == STATE_GAME_WON:
             for button in letter_buttons:
                 button.draw()
@@ -720,6 +706,22 @@ def reset_ui_text():
     solution_text = ui_object_list[GAME_OBJECT][SOLUTION_TEXT]
     solution_text.set_animation(ANIMATION_SHORT_POPOUT)
 
+def loading_screen():
+    center = screen_size_x / 2, screen_size_y / 2
+    loading_text = LOADING_TEXT_FONT.render("Loading...", True, (BLACK_COLOR))
+    loading_text_rect = loading_text.get_rect()
+    loading_text_rect.center = center
+    screen.fill(MENU_BACKGROUND_COLOR)
+    screen.blit(loading_text, loading_text_rect)
+    pygame.display.update()
+    print(game.get_state())
+    game.set_state(STATE_FROZEN)
+    print(game.get_state())
+    for function in preload_list:
+        function()
+    game.set_state(STATE_RESUME)
+    print(game.get_state())
+
 def start_game():
     pygame.mixer.Sound.play(start_game_sound)
     reset_game()
@@ -1048,6 +1050,7 @@ def align_ui_info(layout_size_y, layout_padding_y, info_amount, info_order):
 async def main():
     global screen_size_x, screen_size_y, debug_text_surface, debug_text_rect, debug_timer_text_surface, debug_timer_text, object_list_index
 
+    loading_screen()
     initialize_game()
 
     is_finger_lifted = True
@@ -1254,6 +1257,8 @@ if __name__ == '__main__':
     pygame.init()
     pygame.mixer.init()
 
+    preload_list = []
+
     INIT_SCREEN_WIDTH = 1024
     INIT_SCREEN_HEIGHT = 768
 
@@ -1261,6 +1266,8 @@ if __name__ == '__main__':
     screen_size_x, screen_size_y = screen.get_size()
 
     # Game states
+    STATE_FROZEN = "FROZEN"
+    STATE_RESUME = "RESUME"
     STATE_MENU = "MENU"
     STATE_PLAYING = "PLAYING"
     STATE_SHOW_SOLUTION = "SHOW_SOLUTION"
@@ -1387,6 +1394,10 @@ if __name__ == '__main__':
     SELECT_THEME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
     SELECT_DIFFICULTY_THEME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
     BACK_BUTTON_FONT = pygame.font.Font(FONT_FILE_NAME, 40)
+
+    # Loading screen font
+
+    LOADING_TEXT_FONT = pygame.font.Font(FONT_FILE_NAME, 60)
 
     # Post game fonts
     CONTINUE_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
