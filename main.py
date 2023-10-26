@@ -7,46 +7,175 @@ import pygame
 import string
 import random
 import asyncio
-from pygame import gfxdraw
+import math
+import numpy as np
 
 
 class Game:
     def __init__(self):
-        self.state = STATE_MENU
+        self.__state = STATE_MENU
+        self.__background_color = MENU_BACKGROUND_COLOR
+        self.__background_shapes = Background_Shapes_List()
+        self.create_background_shapes(SHAPE_STAR_AMOUNT)
     
+    def create_background_shapes(self, amount):
+        for i in range(amount):
+            rand_x_position = random.randrange(0, screen_size_x)
+            rand_y_position = random.randrange(0, screen_size_y)
+
+            rand_r = random.randrange(50,200)
+            rand_g = random.randrange(50,200)
+            rand_b = random.randrange(50,200)
+            color = (rand_r, rand_g, rand_b)
+
+            background_star = Background_Shape(screen, SHAPE_STAR_NAME, rand_x_position ,rand_y_position, color)
+
+            """
+
+            rand_direction_x = random.uniform(0.2, 0.8) * 1 if random.random() < 0.5 else -1
+            rand_direction_y = random.uniform(0.2, 0.8) * 1 if random.random() < 0.5 else -1
+
+            min_speed = 1.0
+            max_speed = 2.5
+
+            speed = random.uniform(min_speed, max_speed)
+            
+            #define array with some values
+            my_arr = np.array([rand_direction_x, rand_direction_y])
+
+            # Find the minimum and maximum values in the array
+            my_min_val = np.min(my_arr)
+            my_max_val = np.max(my_arr)
+
+            # Perform min-max normalization
+            my_normalized_arr = (my_arr - my_min_val) / (my_max_val - my_min_val)
+            print(f"my_normalized_arr {my_normalized_arr} my_arr {my_arr} my_min_val {my_min_val} my_max_val {my_max_val}")
+
+            rand_x_speed = my_normalized_arr[0] * speed
+            rand_y_speed = my_normalized_arr[1] * speed
+            """
+
+            min_speed = 0.5
+            max_speed = 2.0
+
+            random_percentage = random.random()
+            
+            rand_x_speed = (((max_speed - min_speed) * random_percentage) + min_speed)
+            rand_y_speed = (((max_speed - min_speed) * 1.0 - random_percentage) + min_speed) * -1
+
+            background_star.set_move_speed(rand_x_speed, rand_y_speed)
+
+            self.__background_shapes.add_item(background_star)
+
+
     def set_state(self, state):
-        self.state = state
+        self.__state = state
+        if self.__state == STATE_PLAYING or self.__state == STATE_SHOW_SOLUTION or self.__state == STATE_GAME_WON:
+            self.__background_color = GAME_BACKGROUND_COLOR
+        elif self.__state == STATE_MENU:
+            self.__background_color = MENU_BACKGROUND_COLOR
+        else:
+            self.__background_color = WHITE_COLOR
+
+    def get_state(self):
+        return self.__state
+
+    def background(self):
+        screen.fill(self.__background_color)
+        self.__background_shapes.update()
+
     
     def update(self):
-        if self.state == STATE_PLAYING or self.state == STATE_SHOW_SOLUTION or self.state == STATE_GAME_WON:
-            screen.fill(GAME_BACKGROUND_COLOR)
+        self.background()
+        if self.__state == STATE_PLAYING or self.__state == STATE_SHOW_SOLUTION or self.__state == STATE_GAME_WON:
             for button in letter_buttons:
                 button.draw()
 
             for item in ui_object_list[GAME_OBJECT]:
                 object = ui_object_list[GAME_OBJECT][item]
                 object.draw()
-                #object_rect = object.get_rect()
-                #screen.blit(object.get_surface(), (object_rect.x, object_rect.y))
             
-            if self.state == STATE_SHOW_SOLUTION or self.state == STATE_GAME_WON:
+            if self.__state == STATE_SHOW_SOLUTION or self.__state == STATE_GAME_WON:
                 for item in ui_object_list[GAME_END_OBJECT]:
                     object = ui_object_list[GAME_END_OBJECT][item]
                     object.draw()
-                    #if not object.is_hidden():
-                        #object_rect = object.get_rect()
-                        #screen.blit(object.get_surface(), (object_rect.x, object_rect.y))
 
-        elif self.state == STATE_MENU:
-            screen.fill(MENU_BACKGROUND_COLOR)
+        elif self.__state == STATE_MENU:
             for item in ui_object_list[MENU_OBJECT]:
                 object = ui_object_list[MENU_OBJECT][item]
                 object.draw()
-                #if not object.is_hidden():
-                    #object_rect = object.get_rect()
-                    #screen.blit(object.get_surface(), (object_rect.x, object_rect.y))
-        else:
-            screen.fill(WHITE_COLOR)
+
+class Background_Shapes_List:
+    def __init__(self):
+        self.__list = []
+
+    def __getitem__(self, index):
+        return self.__list[index]
+
+    def update(self):
+        list = self.__list
+        for item in list:
+            item.update()
+
+    def get_list(self):
+        return self.__list
+    
+    def add_item(self, item):
+        self.__list.append(item)
+
+class Background_Shape(pygame.Surface):
+    def __init__(self, parent, shape, x ,y, color = None):
+        
+        rand_x = random.random()
+        rand_y = random.random()
+        self.__direction = rand_x, rand_y
+        self.__center_x = x
+        self.__center_y = y
+        self.__parent = parent
+        self.__color = color
+
+        self.__rotation_counter = 0
+        self.__rotation_list = rotated_shapes[shape]
+
+    def set_move_speed(self, x, y):
+        self.__direction = x, y
+        
+    def update(self):
+
+        if self.__rotation_list:
+
+            # Moving center
+            self.__center_x += self.__direction[0]
+            self.__center_y += self.__direction[1]
+
+            if(self.__center_x < -50):
+                self.__center_x = screen_size_x + 45
+            elif self.__center_x > screen_size_x + 50:
+                self.__center_x = -45
+                
+            if(self.__center_y < -50):
+                self.__center_y = screen_size_y + 45
+            elif self.__center_y > screen_size_y + 50:
+                self.__center_y = -45
+
+
+
+            # Rotation
+            current_rotation = self.__rotation_counter
+
+            new_surface = self.__rotation_list[current_rotation]
+            new_surface_rect = new_surface.get_rect()
+            new_surface_rect.center = self.__center_x, self.__center_y
+
+            self.__rotation_counter += 1
+            if self.__rotation_counter >= len(self.__rotation_list):
+                self.__rotation_counter = 0
+
+            self.__parent.blit(new_surface, new_surface_rect)
+        
+    
+    def get_rect(self) -> pygame.Rect:
+        return self.__rect
 
 class Button:
     def __init__(self, surface, custom_function = None, clickable: bool = False) -> None:
@@ -70,6 +199,9 @@ class Button:
     
     def set_rect(self, rect):
         self.__rect = rect
+        
+    def set_rect_center(self, rect):
+        self.__rect.center = rect
     
     def get_surface(self):
         return self.__surface
@@ -110,6 +242,12 @@ class Button:
             self.__is_selected = selected
             if selected:
                 self.set_animation(ANIMATION_SELECTED)
+
+    def set_image(self, image):
+        self.__surface = image
+                
+    def update_surface(self): # Delete when can
+        pass
 
 class Interactive_Text:
     def __init__(self, text: string, color: pygame.color.Color, font: pygame.font.Font, custom_function = None, clickable: bool = False):
@@ -315,20 +453,27 @@ class Letter_Button():
         self.__is_animating = False
         self.__animation = "NONE"
 
+        self.__is_changed = False # Flag to reduce rendering when nothing changed
+
     def change_color(self, color):
         self.__color = color
+        self.__is_changed = True
 
     def change_alpha(self, alpha):
         self.__alpha = alpha
+        self.__is_changed = True
 
     
     def draw(self):
-        self.__surface = pygame.Surface.copy(self.__original_image)
-        self.__rect = self.__surface.get_rect()
-        self.__rect.center = (self.__x_center, self.__y_center)
-        font_surface = self.__font.render(self.letter, True, self.__color)
-        self.__surface.blit(font_surface, (15, 0)) # fix math here
-        self.__surface.set_alpha(self.__alpha)
+        if self.__is_animating or self.__is_changed:
+            self.__surface = pygame.Surface.copy(self.__original_image)
+            self.__rect = self.__surface.get_rect()
+            self.__rect.center = (self.__x_center, self.__y_center)
+            font_surface = self.__font.render(self.letter, True, self.__color)
+            self.__surface.blit(font_surface, (15, 0)) # fix math here
+            self.__surface.set_alpha(self.__alpha)
+
+            self.__is_changed = False
 
         if self.is_clicked:
             self.__is_animating = True
@@ -400,6 +545,30 @@ class Letter_Button():
     def set_selectable(self, selectable):
         self.__selectable = selectable
 
+
+def render_rotation_images(image, rotation_angle, color = None):
+    rotation_amount = math.floor(360 / rotation_angle + 0.5)
+    new_rotation_angle = 360 / rotation_amount
+    rotated_images = []
+    
+    for i in range(rotation_amount):
+
+        # Rotation
+        new_surface = pygame.transform.rotozoom(image, new_rotation_angle * i, 1.0)
+
+        # Coloring
+        if color: # Borrowed code https://stackoverflow.com/questions/42821442/how-do-i-change-the-colour-of-an-image-in-pygame-without-changing-its-transparen
+            w, h = new_surface.get_size()
+            r, g, b = color
+            for x in range(w):
+                for y in range(h):
+                    a = new_surface.get_at((x, y))[3]
+                    new_surface.set_at((x, y), pygame.Color(r, g, b, a))
+
+        rotated_images.append(new_surface)
+
+    return rotated_images
+    
 def shake_animation(self, strength, animation_frames, style):
     current_step = self.get_animation_step()
     new_surface = self.get_surface()
@@ -498,8 +667,7 @@ def cycle_themes():
     if theme_index >= len(theme_list):
         theme_index = 0
     
-    text = f"Selected theme: {theme_list[theme_index]}"
-    ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON].set_text(text)
+    ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON].set_image(theme_image_list[theme_list[theme_index]])
     fit_ui_text()
     
 def cycle_difficulty():
@@ -508,8 +676,7 @@ def cycle_difficulty():
     if difficulty_index >= len(difficulty_list):
         difficulty_index = 0
     
-    text = f"Selected difficulty: {difficulty_list[difficulty_index]}"
-    ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON].set_text(text)
+    ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON].set_image(difficulty_image_list[difficulty_list[difficulty_index]])
     fit_ui_text()
 
 def new_round():
@@ -560,14 +727,15 @@ def init_ui_text(ui_object_list):
     ui_object_list[MENU_OBJECT] = {}
 
     # Menu items
-    start_game_text = f"Start hangman!"
-    ui_object_list[MENU_OBJECT][START_GAME_BUTTON] = Interactive_Text(start_game_text, DARK_GREEN_COLOR, START_GAME_FONT, start_game, True)
+    ui_object_list[MENU_OBJECT][START_GAME_BUTTON] = Button(start_game_button_fitted_image, start_game, True)
     
-    select_difficulty_text = f"Selected difficulty: {difficulty_list[difficulty_index]}"
-    ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON] = Interactive_Text(select_difficulty_text, DARK_BLUE_COLOR, SELECT_DIFFICULTY_THEME_FONT, cycle_difficulty, True)
+    ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON] = Button(easy_button_fitted_image, cycle_difficulty, True)
 
-    select_theme_text = f"Selected theme: {theme_list[theme_index]}"
-    ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON] = Interactive_Text(select_theme_text, DARK_BLUE_COLOR, SELECT_THEME_FONT, cycle_themes, True)
+    ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON] = Button(all_button_fitted_image, cycle_themes, True)
+
+    theme_text = f"Theme:"
+    ui_object_list[MENU_OBJECT][THEME_TEXT] = Interactive_Text(theme_text, BLACK_COLOR, THEME_FONT)
+    
     
     
 
@@ -753,6 +921,7 @@ def fit_letter_buttons():
 
 def fit_ui_text():
     global debug_text_rect, debug_timer_text_rect
+
     #Start menu ui text
     start_menu_layout_size_y = screen_size_y / 2
     start_menu_layout_padding_y = screen_size_y / 5
@@ -760,16 +929,48 @@ def fit_ui_text():
     menu_button_amount = len(ui_object_list[MENU_OBJECT])
     menu_order = 0
     
-    for item in ui_object_list[MENU_OBJECT]:
-        object = ui_object_list[MENU_OBJECT][item]
-        object_rect = object.get_surface().get_rect()
-        object_rect.x = screen_size_x / 2
-        object_rect.y = align_ui_info(start_menu_layout_size_y, start_menu_layout_padding_y, menu_button_amount, menu_order)
-        object.set_rect(object_rect)
-        object.set_rect_center((object_rect.x, object_rect.y))
-        object.update_surface()
+    object = ui_object_list[MENU_OBJECT][START_GAME_BUTTON]
+    object_rect = object.get_surface().get_rect()
+    object_rect.x = screen_size_x / 2
+    object_rect.y = align_ui_info(start_menu_layout_size_y, start_menu_layout_padding_y, menu_button_amount, menu_order)
+    object.set_rect(object_rect)
+    object.set_rect_center((object_rect.x, object_rect.y))
+    object.update_surface()
 
-        menu_order += 1
+    menu_order += 2
+    
+    # Theme: with theme and difficulty buttons
+
+    theme_padding = 0
+    center = screen_size_x / 2
+
+    object_width_list = [ui_object_list[MENU_OBJECT][THEME_TEXT].get_surface().get_rect().width,
+        ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON].get_surface().get_rect().width,
+        ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON].get_surface().get_rect().width]
+
+    object = ui_object_list[MENU_OBJECT][THEME_TEXT]
+    object_rect = object.get_surface().get_rect()
+    object_rect.x = center - (sum(object_width_list) / 2) - (theme_padding * (len(object_width_list) - 1)) / 2
+    object_rect.y = align_ui_info(start_menu_layout_size_y, start_menu_layout_padding_y, menu_button_amount, menu_order)
+    object.set_rect(object_rect)
+    object.set_rect_center((object_rect.x, object_rect.y))
+    object.update_surface()
+    
+    object = ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON]
+    object_rect = object.get_surface().get_rect()
+    object_rect.x = center
+    object_rect.y = align_ui_info(start_menu_layout_size_y, start_menu_layout_padding_y, menu_button_amount, menu_order)
+    object.set_rect(object_rect)
+    object.set_rect_center((object_rect.x, object_rect.y))
+    object.update_surface()
+    
+    object = ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON]
+    object_rect = object.get_surface().get_rect()
+    object_rect.x = center + (sum(object_width_list) / 2) + (theme_padding * (len(object_width_list) - 1)) / 2
+    object_rect.y = align_ui_info(start_menu_layout_size_y, start_menu_layout_padding_y, menu_button_amount, menu_order)
+    object.set_rect(object_rect)
+    object.set_rect_center((object_rect.x, object_rect.y))
+    object.update_surface()
 
     #Playing state ui text
 
@@ -834,187 +1035,6 @@ def align_ui_info(layout_size_y, layout_padding_y, info_amount, info_order):
     return (layout_size_y / info_amount) * (info_order + 1) + layout_padding_y
 
 
-pygame.init()
-
-INIT_SCREEN_WIDTH = 1024
-INIT_SCREEN_HEIGHT = 768
-
-RED_COLOR = (200, 50, 25)
-GREEN_COLOR = (16, 140, 40)
-DARK_GREEN_COLOR = (8, 130, 20)
-DARK_BLUE_COLOR = (50, 50, 150)
-LIGHT_BLUE_COLOR = (138, 160, 242)
-BLACK_COLOR = (0, 0, 0)
-WHITE_COLOR = (255, 255, 255)
-
-COLOR_MAX_VALUE = 255
-WRONG_LETTER_ALPHA = 100
-
-INITIAL_DANGER_COLOR = (0, 0, 0)
-
-SOLVED_COLOR = GREEN_COLOR
-UNSOLVED_COLOR = RED_COLOR
-
-TEMP_COLOR_HOLDER = (174, 199, 245)
-
-MENU_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
-GAME_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
-
-
-# Animation names
-
-ANIMATION_CLICKED = "CLICKED"
-ANIMATION_POPOUT = "POPOUT"
-ANIMATION_SHORT_POPOUT = "SHORT_POPOUT"
-ANIMATION_LETTER_POPOUT = "LETTER_POPOUT"
-ANIMATION_SHAKE = "SHAKE"
-ANIMATION_SELECTED = "HOVER"
-
-# Animation frames
-
-ANIMATION_CLICKED_FRAMES = 10
-ANIMATION_LETTER_BUTTON_RESET_FRAMES = 10
-ANIMATION_POPOUT_FRAMES = 30
-ANIMATION_SHORT_POPOUT_FRAMES = 10
-ANIMATION_SHAKE_FRAMES = 10
-ANIMATION_SELECTED_FRAMES = 10
-
-# Animation scaling
-
-ANIMATION_CLICKED_SCALE = 0.1
-ANIMATION_LETTER_BUTTON_RESET_SCALE = 0.1
-ANIMATION_POPOUT_SCALE = 0.2
-ANIMATION_SHORT_POPOUT_SCALE = 0.1
-ANIMATION_SELECTED_SCALE = 0.1
-
-# Animation shake
-
-ANIMATION_SHAKE_STRENGTH = 2
-ANIMATION_SHAKE_RANDOM = "RANDOM"
-
-
-
-#Theme names
-THEME_ALL = "all"
-THEME_GAMING = "gaming"
-
-theme_index = 0
-
-theme_list = [THEME_ALL,
-              THEME_GAMING]
-
-#Difficulty names
-DIFF_EASY = "easy"
-DIFF_HARD = "hard"
-
-difficulty_index = 0
-
-difficulty_list = [DIFF_EASY,
-              DIFF_HARD]
-
-DEFAULT_BUTTON_FONT_SIZE = 60
-DEFAULT_FONT_SIZE = 50
-
-FONT_FILE_NAME = "MartianMono-VariableFont_wdth,wght.ttf"
-
-#debug related
-DEBUG_FONT = pygame.font.Font(FONT_FILE_NAME, 10)
-DEBUG_TIMER_FONT = pygame.font.Font(FONT_FILE_NAME, 10)
-
-# In game fonts
-GUESS_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
-SOLUTION_FONT = pygame.font.Font(FONT_FILE_NAME, 40)
-EVENT_FONT = pygame.font.Font(FONT_FILE_NAME, 20)
-BUTTON_FONT = pygame.font.Font(FONT_FILE_NAME, DEFAULT_BUTTON_FONT_SIZE)
-GUESSES_LEFT_FONT = pygame.font.Font(FONT_FILE_NAME, 25)
-
-# Menu fonts
-START_GAME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
-SELECT_THEME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
-SELECT_DIFFICULTY_THEME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
-BACK_BUTTON_FONT = pygame.font.Font(FONT_FILE_NAME, 40)
-
-# Post game fonts
-CONTINUE_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
-
-screen = pygame.display.set_mode((INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT), pygame.DOUBLEBUF | pygame.RESIZABLE)
-screen_size_x, screen_size_y = screen.get_size()
-
-# Initializing game variables
-
-answer = ""
-letter_buttons = []
-solution_text = len(answer) * "_"
-event_text = ""
-event_text_surface = EVENT_FONT.render(event_text, True, BLACK_COLOR)
-wrong_guess_amount = 0
-max_wrong_guesses = 8
-
-guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
-
-clock = pygame.time.Clock()
-
-# Game states
-STATE_MENU = "MENU"
-STATE_PLAYING = "PLAYING"
-STATE_SHOW_SOLUTION = "SHOW_SOLUTION"
-STATE_GAME_WON = "GAME_WON"
-
-game = Game()
-
-# End of game related objects
-GAME_END_OBJECT = "GAME_END_OBJECT"
-
-CONTINUE_TEXT = "CONTINUE_TEXT"
-
-
-# Game related objects
-GAME_OBJECT = "GAME_OBJECT"
-SOLUTION_TEXT = "SOLUTION_TEXT"
-EVENT_TEXT = "EVENT_TEXT"
-GUESSED_LETTERS_TEXT = "GUESSED_LETTERS_TEXT"
-GUESSES_LEFT_TEXT = "GUESSES_LEFT_TEXT"
-
-BACK_BUTTON = "BACK_BUTTON"
-
-# Menu related objects
-MENU_OBJECT = "MENU_OBJECT"
-
-START_GAME_BUTTON = "START_GAME_BUTTON"
-SELECT_THEME_BUTTON = "SELECT_THEME_BUTTON"
-SELECT_DIFFICULTY_BUTTON = "SELECT_DIFFICULTY_BUTTON"
-
-# Images
-
-letter_button_loaded_image = pygame.image.load("letter_button_background.png")
-letter_button_fitted_image = pygame.transform.smoothscale(letter_button_loaded_image, (75, 75))
-
-back_button_loaded_image = pygame.image.load("back_button.png")
-back_button_fitted_image = back_button_loaded_image #pygame.transform.smoothscale(back_button_loaded_image, (75, 75))
-
-continue_button_loaded_image = pygame.image.load("continue_button.png")
-continue_button_fitted_image = continue_button_loaded_image #pygame.transform.smoothscale(continue_button_loaded_image, (75, 75))
-
-ui_object_list = {}
-
-# Debug stuff
-
-debug_mode = False
-debug_text = ""
-if debug_mode:
-    debug_text = "debug text"
-debug_text_surface = DEBUG_FONT.render(debug_text, True, BLACK_COLOR)
-debug_text_rect = debug_text_surface.get_rect()
-debug_text_rect = (0, screen_size_y - 15)
-
-debug_timer_text = 0
-debug_timer_text_surface = DEBUG_TIMER_FONT.render(str(debug_timer_text), True, BLACK_COLOR)
-debug_timer_text_rect = debug_timer_text_surface.get_rect()
-debug_timer_text_rect.center = (screen_size_x - 10, screen_size_y - 15)
-
-DEBUG_TIMER = pygame.USEREVENT
-timer = pygame.time.set_timer(DEBUG_TIMER, 1000)
-
 
 async def main():
     global screen_size_x, screen_size_y, debug_text_surface, debug_text_rect, debug_timer_text_surface, debug_timer_text, object_list_index
@@ -1028,7 +1048,7 @@ async def main():
         events = pygame.event.get()
         for event in events:
             mouse_pos = pygame.mouse.get_pos()
-            if event.type == DEBUG_TIMER:
+            if event.type == DEBUG_TIMER and debug_mode:
                 debug_timer_text += 1
                 debug_timer_text_surface = DEBUG_FONT.render(str(debug_timer_text), True, BLACK_COLOR)
 
@@ -1056,7 +1076,7 @@ async def main():
                         button.not_clicked()
 
             # Main menu
-            if(game.state == STATE_MENU): 
+            if(game.get_state() == STATE_MENU): 
                 object_list_index = MENU_OBJECT
                 
                 # Hover over
@@ -1094,7 +1114,7 @@ async def main():
                     break
             
             # playing state
-            elif(game.state == STATE_PLAYING): 
+            elif(game.get_state() == STATE_PLAYING): 
                 object_list_index = GAME_OBJECT
                 
                 # Hover over
@@ -1151,7 +1171,7 @@ async def main():
                     break
 
             #Game/round ended
-            elif(game.state == STATE_SHOW_SOLUTION or game.state == STATE_GAME_WON): 
+            elif(game.get_state() == STATE_SHOW_SOLUTION or game.get_state() == STATE_GAME_WON): 
                 object_list_index = GAME_END_OBJECT
                 
                 # Hover over
@@ -1189,9 +1209,11 @@ async def main():
         if debug_mode:
             screen.blit(debug_text_surface, debug_text_rect)
             screen.blit(debug_timer_text_surface, debug_timer_text_rect)
-        
+
         pygame.display.flip()
-        clock.tick(60)
+
+        clock.tick(TICK_SPEED)
+
         await asyncio.sleep(0)
 
     pygame.quit()
@@ -1218,4 +1240,247 @@ def finger_tap_event(event, object_list_index):
                 object.custom_function()
                 return
 
-asyncio.run(main())
+
+if __name__ == '__main__':
+    pygame.init()
+
+    INIT_SCREEN_WIDTH = 1024
+    INIT_SCREEN_HEIGHT = 768
+
+    screen = pygame.display.set_mode((INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT), pygame.DOUBLEBUF | pygame.RESIZABLE)
+    screen_size_x, screen_size_y = screen.get_size()
+
+    # Game states
+    STATE_MENU = "MENU"
+    STATE_PLAYING = "PLAYING"
+    STATE_SHOW_SOLUTION = "SHOW_SOLUTION"
+    STATE_GAME_WON = "GAME_WON"
+    
+
+
+    RED_COLOR = (200, 50, 25)
+    GREEN_COLOR = (16, 140, 40)
+    DARK_GREEN_COLOR = (8, 130, 20)
+    DARK_BLUE_COLOR = (50, 50, 150)
+    LIGHT_BLUE_COLOR = (138, 160, 242)
+    BLACK_COLOR = (0, 0, 0)
+    WHITE_COLOR = (255, 255, 255)
+
+    COLOR_MAX_VALUE = 255
+    WRONG_LETTER_ALPHA = 100
+
+    INITIAL_DANGER_COLOR = (0, 0, 0)
+
+    SOLVED_COLOR = GREEN_COLOR
+    UNSOLVED_COLOR = RED_COLOR
+
+    TEMP_COLOR_HOLDER = (174, 199, 245)
+
+    MENU_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
+    GAME_BACKGROUND_COLOR = TEMP_COLOR_HOLDER
+
+    DARKER_MENU_BACKGROUND_COLOR = (127,159,219)
+
+    
+    # Images for shapes
+
+    white_star_image = pygame.image.load("white_star.png").convert_alpha()
+    white_star_fitted_image = pygame.transform.smoothscale(white_star_image, (75, 75))
+
+    # Shape variables
+
+    SHAPE_STAR_NAME = "STAR"
+    SHAPE_STAR_AMOUNT = 10
+
+    rotated_shapes = {}
+    rotated_shapes[SHAPE_STAR_NAME] = render_rotation_images(white_star_fitted_image, 1.5, DARKER_MENU_BACKGROUND_COLOR)
+
+    game = Game()
+
+
+
+    # Animation names
+
+    ANIMATION_CLICKED = "CLICKED"
+    ANIMATION_POPOUT = "POPOUT"
+    ANIMATION_SHORT_POPOUT = "SHORT_POPOUT"
+    ANIMATION_LETTER_POPOUT = "LETTER_POPOUT"
+    ANIMATION_SHAKE = "SHAKE"
+    ANIMATION_SELECTED = "HOVER"
+
+
+    TICK_SPEED = 60
+
+    # Animation frames
+
+    ANIMATION_CLICKED_FRAMES = TICK_SPEED / 6
+    ANIMATION_LETTER_BUTTON_RESET_FRAMES = TICK_SPEED / 6
+    ANIMATION_POPOUT_FRAMES = TICK_SPEED / 2
+    ANIMATION_SHORT_POPOUT_FRAMES = TICK_SPEED / 6
+    ANIMATION_SHAKE_FRAMES = TICK_SPEED / 6
+    ANIMATION_SELECTED_FRAMES = TICK_SPEED / 6
+
+    # Animation scaling
+
+    ANIMATION_CLICKED_SCALE = 0.1
+    ANIMATION_LETTER_BUTTON_RESET_SCALE = 0.1
+    ANIMATION_POPOUT_SCALE = 0.2
+    ANIMATION_SHORT_POPOUT_SCALE = 0.1
+    ANIMATION_SELECTED_SCALE = 0.1
+
+    # Animation shake
+
+    ANIMATION_SHAKE_STRENGTH = 2
+    ANIMATION_SHAKE_RANDOM = "RANDOM"
+
+
+
+    #Theme names
+    THEME_ALL = "all"
+    THEME_GAMING = "gaming"
+
+    theme_index = 0
+
+    theme_list = [THEME_ALL,
+                THEME_GAMING]
+
+
+    DEFAULT_BUTTON_FONT_SIZE = 60
+    DEFAULT_FONT_SIZE = 50
+
+    FONT_FILE_NAME = "MartianMono-VariableFont_wdth,wght.ttf"
+
+    #debug related
+    DEBUG_FONT = pygame.font.Font(FONT_FILE_NAME, 10)
+    DEBUG_TIMER_FONT = pygame.font.Font(FONT_FILE_NAME, 10)
+
+    # In game fonts
+    GUESS_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
+    SOLUTION_FONT = pygame.font.Font(FONT_FILE_NAME, 40)
+    EVENT_FONT = pygame.font.Font(FONT_FILE_NAME, 20)
+    BUTTON_FONT = pygame.font.Font(FONT_FILE_NAME, DEFAULT_BUTTON_FONT_SIZE)
+    GUESSES_LEFT_FONT = pygame.font.Font(FONT_FILE_NAME, 25)
+
+    # Menu fonts
+    START_GAME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
+    THEME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
+    SELECT_THEME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
+    SELECT_DIFFICULTY_THEME_FONT = pygame.font.Font(FONT_FILE_NAME, 50)
+    BACK_BUTTON_FONT = pygame.font.Font(FONT_FILE_NAME, 40)
+
+    # Post game fonts
+    CONTINUE_FONT = pygame.font.Font(FONT_FILE_NAME, 30)
+
+
+    # Initializing game variables
+
+    answer = ""
+    letter_buttons = []
+    solution_text = len(answer) * "_"
+    event_text = ""
+    event_text_surface = EVENT_FONT.render(event_text, True, BLACK_COLOR)
+    wrong_guess_amount = 0
+    max_wrong_guesses = 8
+
+    guesses_left_text = f"You have {max_wrong_guesses-wrong_guess_amount} wrong guesses left."
+
+    clock = pygame.time.Clock()
+
+
+    # End of game related objects
+    GAME_END_OBJECT = "GAME_END_OBJECT"
+
+    CONTINUE_TEXT = "CONTINUE_TEXT"
+
+
+    # Game related objects
+    GAME_OBJECT = "GAME_OBJECT"
+    SOLUTION_TEXT = "SOLUTION_TEXT"
+    EVENT_TEXT = "EVENT_TEXT"
+    GUESSED_LETTERS_TEXT = "GUESSED_LETTERS_TEXT"
+    GUESSES_LEFT_TEXT = "GUESSES_LEFT_TEXT"
+
+    BACK_BUTTON = "BACK_BUTTON"
+
+    # Menu related objects
+    MENU_OBJECT = "MENU_OBJECT"
+
+    START_GAME_BUTTON = "START_GAME_BUTTON"
+    THEME_TEXT = "THEME_TEXT"
+    SELECT_THEME_BUTTON = "SELECT_THEME_BUTTON"
+    SELECT_DIFFICULTY_BUTTON = "SELECT_DIFFICULTY_BUTTON"
+
+    # Images for buttons
+
+    letter_button_loaded_image = pygame.image.load("letter_button_background.png").convert_alpha()
+    letter_button_fitted_image = pygame.transform.smoothscale(letter_button_loaded_image, (75, 75))
+
+    back_button_loaded_image = pygame.image.load("back_button.png").convert_alpha()
+    back_button_fitted_image = back_button_loaded_image #pygame.transform.smoothscale(back_button_loaded_image, (75, 75))
+
+    continue_button_loaded_image = pygame.image.load("continue_button.png").convert_alpha()
+    continue_button_fitted_image = continue_button_loaded_image #pygame.transform.smoothscale(continue_button_loaded_image, (75, 75))
+
+    start_game_button_loaded_image = pygame.image.load("start_game_button.png").convert_alpha()
+    start_game_button_fitted_image = start_game_button_loaded_image #pygame.transform.smoothscale(start_game_button_loaded_image, (75, 75))
+
+    easy_button_loaded_image = pygame.image.load("easy_button.png").convert_alpha()
+    easy_button_fitted_image = easy_button_loaded_image #pygame.transform.smoothscale(easy_button_loaded_image, (75, 75))
+
+    hard_button_loaded_image = pygame.image.load("hard_button.png").convert_alpha()
+    hard_button_fitted_image = hard_button_loaded_image #pygame.transform.smoothscale(hard_button_loaded_image, (75, 75))
+    
+    gaming_button_loaded_image = pygame.image.load("gaming_button.png").convert_alpha()
+    gaming_button_fitted_image = gaming_button_loaded_image #pygame.transform.smoothscale(gaming_button_loaded_image, (75, 75))
+
+    all_button_loaded_image = pygame.image.load("all_button.png").convert_alpha()
+    all_button_fitted_image = all_button_loaded_image #pygame.transform.smoothscale(all_button_loaded_image, (75, 75))
+
+    ui_object_list = {}
+
+
+    #Difficulty names
+    DIFF_EASY = "easy"
+    DIFF_HARD = "hard"
+
+    difficulty_index = 0
+
+    difficulty_list = [DIFF_EASY,
+                DIFF_HARD]
+
+    difficulty_image_list = {"easy" : easy_button_fitted_image, "hard" : hard_button_fitted_image}
+    
+    #Theme names
+    THEME_ALL = "all"
+    THEME_GAMING = "gaming"
+
+    theme_index = 0
+
+    theme_list = [THEME_ALL,
+                THEME_GAMING]
+
+    theme_image_list = {"all" : all_button_fitted_image, "gaming" : gaming_button_fitted_image}
+
+    # Debug stuff
+
+    debug_mode = False
+    debug_text = ""
+    if debug_mode:
+        debug_text = "debug text"
+    debug_text_surface = DEBUG_FONT.render(debug_text, True, BLACK_COLOR)
+    debug_text_rect = debug_text_surface.get_rect()
+    debug_text_rect = (0, screen_size_y - 15)
+
+    debug_timer_text = 0
+    debug_timer_text_surface = DEBUG_TIMER_FONT.render(str(debug_timer_text), True, BLACK_COLOR)
+    debug_timer_text_rect = debug_timer_text_surface.get_rect()
+    debug_timer_text_rect.center = (screen_size_x - 10, screen_size_y - 15)
+
+    DEBUG_TIMER = pygame.USEREVENT
+    timer = pygame.time.set_timer(DEBUG_TIMER, 1000)
+
+    # Performance enhancer
+    pygame.event.set_allowed([pygame.QUIT, pygame.KEYDOWN, pygame.USEREVENT, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP,
+                              pygame.FINGERDOWN, pygame.VIDEORESIZE, pygame.KEYUP, pygame.FINGERUP])
+
+    asyncio.run(main())
