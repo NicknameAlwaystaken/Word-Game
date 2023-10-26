@@ -659,9 +659,11 @@ def get_new_word():
     return list_of_answers[random_int]
 
 def go_to_main_menu():
+    pygame.mixer.Sound.play(back_sound)
     game.set_state(STATE_MENU)
 
 def cycle_themes():
+    pygame.mixer.Sound.play(change_setting_sound)
     global theme_list, theme_index
     theme_index += 1
     if theme_index >= len(theme_list):
@@ -671,6 +673,7 @@ def cycle_themes():
     fit_ui_text()
     
 def cycle_difficulty():
+    pygame.mixer.Sound.play(change_setting_sound)
     global difficulty_list, difficulty_index
     difficulty_index += 1
     if difficulty_index >= len(difficulty_list):
@@ -680,6 +683,7 @@ def cycle_difficulty():
     fit_ui_text()
 
 def new_round():
+    pygame.mixer.Sound.play(start_game_sound)
     reset_game()
     game.set_state(STATE_PLAYING)
 
@@ -717,6 +721,7 @@ def reset_ui_text():
     solution_text.set_animation(ANIMATION_SHORT_POPOUT)
 
 def start_game():
+    pygame.mixer.Sound.play(start_game_sound)
     reset_game()
     game.set_state(STATE_PLAYING)
 
@@ -826,11 +831,13 @@ def check_letter(letter_guessed, button):
     guessed_letters_object.set_text(''.join(sorted(new_solution)))
 
     if letter_guessed in answer.upper():
+        pygame.mixer.Sound.play(correct_sound)
         event_text_object.set_text(f"Correct!", GREEN_COLOR)
         button.change_color(GREEN_COLOR)
         button.change_alpha(COLOR_MAX_VALUE)
 
     elif letter_guessed not in answer.upper():
+        pygame.mixer.Sound.play(wrong_sound)
         event_text_object.set_text(f"Character '{letter_guessed}' not in word", RED_COLOR)
         wrong_guess_amount += 1
 
@@ -848,6 +855,7 @@ def check_letter(letter_guessed, button):
     
 
     if(check_solution(answer)):
+        pygame.mixer.Sound.play(correct_word_sound)
         event_text_object.set_text(f"You won!", BLACK_COLOR)
         guesses_left = ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT]
         guesses_left.set_text("")
@@ -855,6 +863,7 @@ def check_letter(letter_guessed, button):
         game_won(answer)
 
     elif wrong_guess_amount == max_wrong_guesses:
+        pygame.mixer.Sound.play(failed_word_sound)
         event_text_object.set_text(f"Too many wrong guesses!", BLACK_COLOR)
         guesses_left = ui_object_list[GAME_OBJECT][GUESSES_LEFT_TEXT]
         guesses_left.set_text("")
@@ -1243,6 +1252,7 @@ def finger_tap_event(event, object_list_index):
 
 if __name__ == '__main__':
     pygame.init()
+    pygame.mixer.init()
 
     INIT_SCREEN_WIDTH = 1024
     INIT_SCREEN_HEIGHT = 768
@@ -1294,6 +1304,16 @@ if __name__ == '__main__':
 
     rotated_shapes = {}
     rotated_shapes[SHAPE_STAR_NAME] = render_rotation_images(white_star_fitted_image, 1.5, DARKER_MENU_BACKGROUND_COLOR)
+
+    # Game sounds
+
+    start_game_sound = pygame.mixer.Sound("start_game_sound.mp3")
+    correct_sound = pygame.mixer.Sound("correct_sound.mp3")
+    failed_word_sound = pygame.mixer.Sound("failed_word_sound.mp3")
+    correct_word_sound = pygame.mixer.Sound("correct_word_sound.mp3")
+    wrong_sound = pygame.mixer.Sound("wrong_sound.mp3")
+    back_sound = pygame.mixer.Sound("back_sound.mp3")
+    change_setting_sound = pygame.mixer.Sound("change_setting_sound.mp3")
 
     game = Game()
 
