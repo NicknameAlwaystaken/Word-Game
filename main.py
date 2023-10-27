@@ -1302,12 +1302,12 @@ if __name__ == '__main__':
     # Images for shapes
 
     white_star_image = pygame.image.load("white_star.png").convert_alpha()
-    white_star_fitted_image = pygame.transform.smoothscale(white_star_image, (75, 75))
+    white_star_fitted_image = pygame.transform.smoothscale(white_star_image, (50, 50))
 
     # Shape variables
 
     SHAPE_STAR_NAME = "STAR"
-    SHAPE_STAR_AMOUNT = 10
+    SHAPE_STAR_AMOUNT = 20
 
     rotated_shapes = {}
     rotated_shapes[SHAPE_STAR_NAME] = render_rotation_images(white_star_fitted_image, 1.5, DARKER_MENU_BACKGROUND_COLOR)
