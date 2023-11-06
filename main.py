@@ -633,7 +633,7 @@ def initialize_game():
 def read_wordlist():
     global list_of_answers, theme_list, difficulty_list, theme_index, difficulty_index
     list_of_answers = []
-    file_name = "theme" + theme_list[theme_index] + difficulty_list[difficulty_index] + "wordlist.txt"
+    file_name = theme_list[theme_index] + "wordlist.txt"
     with open(file_name, "r") as openfile:
         for line in openfile:
             word = line.rstrip()
@@ -656,16 +656,6 @@ def cycle_themes():
         theme_index = 0
     
     ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON].set_image(theme_image_list[theme_list[theme_index]])
-    fit_ui_text()
-    
-def cycle_difficulty():
-    pygame.mixer.Sound.play(change_setting_sound)
-    global difficulty_list, difficulty_index
-    difficulty_index += 1
-    if difficulty_index >= len(difficulty_list):
-        difficulty_index = 0
-    
-    ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON].set_image(difficulty_image_list[difficulty_list[difficulty_index]])
     fit_ui_text()
 
 def new_round():
@@ -735,8 +725,6 @@ def init_ui_text(ui_object_list):
 
     # Menu items
     ui_object_list[MENU_OBJECT][START_GAME_BUTTON] = Button(start_game_button_fitted_image, start_game, True)
-    
-    ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON] = Button(easy_button_fitted_image, cycle_difficulty, True)
 
     ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON] = Button(all_button_fitted_image, cycle_themes, True)
 
@@ -956,12 +944,11 @@ def fit_ui_text():
     center = screen_size_x / 2
 
     object_width_list = [ui_object_list[MENU_OBJECT][THEME_TEXT].get_surface().get_rect().width,
-        ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON].get_surface().get_rect().width,
-        ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON].get_surface().get_rect().width]
+        ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON].get_surface().get_rect().width]
 
     object = ui_object_list[MENU_OBJECT][THEME_TEXT]
     object_rect = object.get_surface().get_rect()
-    object_rect.x = center - (sum(object_width_list) / 2) - (theme_padding * (len(object_width_list) - 1)) / 2
+    object_rect.x = center - (sum(object_width_list) / 3)
     object_rect.y = align_ui_info(start_menu_layout_size_y, start_menu_layout_padding_y, menu_button_amount, menu_order)
     object.set_rect(object_rect)
     object.set_rect_center((object_rect.x, object_rect.y))
@@ -969,15 +956,7 @@ def fit_ui_text():
     
     object = ui_object_list[MENU_OBJECT][SELECT_THEME_BUTTON]
     object_rect = object.get_surface().get_rect()
-    object_rect.x = center
-    object_rect.y = align_ui_info(start_menu_layout_size_y, start_menu_layout_padding_y, menu_button_amount, menu_order)
-    object.set_rect(object_rect)
-    object.set_rect_center((object_rect.x, object_rect.y))
-    object.update_surface()
-    
-    object = ui_object_list[MENU_OBJECT][SELECT_DIFFICULTY_BUTTON]
-    object_rect = object.get_surface().get_rect()
-    object_rect.x = center + (sum(object_width_list) / 2) + (theme_padding * (len(object_width_list) - 1)) / 2
+    object_rect.x = center + (sum(object_width_list) / 3)
     object_rect.y = align_ui_info(start_menu_layout_size_y, start_menu_layout_padding_y, menu_button_amount, menu_order)
     object.set_rect(object_rect)
     object.set_rect_center((object_rect.x, object_rect.y))
@@ -1439,7 +1418,6 @@ if __name__ == '__main__':
     START_GAME_BUTTON = "START_GAME_BUTTON"
     THEME_TEXT = "THEME_TEXT"
     SELECT_THEME_BUTTON = "SELECT_THEME_BUTTON"
-    SELECT_DIFFICULTY_BUTTON = "SELECT_DIFFICULTY_BUTTON"
 
     # Images for buttons
 
@@ -1469,17 +1447,6 @@ if __name__ == '__main__':
 
     ui_object_list = {}
 
-
-    #Difficulty names
-    DIFF_EASY = "easy"
-    DIFF_HARD = "hard"
-
-    difficulty_index = 0
-
-    difficulty_list = [DIFF_EASY,
-                DIFF_HARD]
-
-    difficulty_image_list = {"easy" : easy_button_fitted_image, "hard" : hard_button_fitted_image}
     
     #Theme names
     THEME_ALL = "all"
